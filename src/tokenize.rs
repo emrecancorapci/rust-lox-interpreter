@@ -11,10 +11,20 @@ pub fn tokenize(filename: &str) {
         (')', "RIGHT_PAREN"),
         ('{', "LEFT_BRACE"),
         ('}', "RIGHT_BRACE"),
-        ('*', "STAR"),
-        ('.', "DOT"),
+        (';', "SEMICOLON"),
         (',', "COMMA"),
         ('+', "PLUS"),
+        ('-', "MINUS"),
+        ('*', "STAR"),
+        ('!', "BANG_EQUAL"),
+        ('=', "EQUAL_EQUAL"),
+        ('<', "LESS_EQUAL"),
+        ('>', "GREATER_EQUAL"),
+        ('!', "BANG_EQUAL"),
+        ('<', "LESS"),
+        ('>', "GREATER"),
+        ('/', "SLASH"),
+        ('.', "DOT"),
     ]);
 
     // Uncomment this block to pass the first stage
@@ -32,7 +42,10 @@ pub fn tokenize(filename: &str) {
                                 println!("{val} {ch} null");
                             }
                             None => {
-                                println!("[line {}] Error: Unexpected character: {ch}", line_num + 1)
+                                println!(
+                                    "[line {}] Error: Unexpected character: {ch}",
+                                    line_num + 1
+                                )
                             }
                         }
                     })
