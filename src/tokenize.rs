@@ -1,6 +1,8 @@
 use std::{ collections::HashMap, fs, io::{ self, Write } };
 
-pub fn tokenize(filename: &str) {
+pub fn tokenize(filename: &str) -> i32 {
+    let mut result = 0;
+
     let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
         writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
         String::new()
@@ -42,6 +44,7 @@ pub fn tokenize(filename: &str) {
                                 println!("{val} {ch} null");
                             }
                             None => {
+                                result = 65;
                                 eprintln!(
                                     "[line {}] Error: Unexpected character: {ch}",
                                     line_num + 1
@@ -54,4 +57,6 @@ pub fn tokenize(filename: &str) {
     } else {
         println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
     }
+    
+    return result;
 }

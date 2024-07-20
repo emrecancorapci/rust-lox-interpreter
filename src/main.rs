@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, process};
 use std::io::{ self, Write };
 
 mod tokenize;
@@ -15,11 +15,13 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            tokenize::tokenize(filename);
+            let result = tokenize::tokenize(filename);
+            process::exit(result);
         }
         _ => {
             let _ = writeln!(io::stderr(), "Unknown command: {}", command);
             return;
         }
-    }
+    };
+
 }
