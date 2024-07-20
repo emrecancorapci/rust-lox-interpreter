@@ -1,6 +1,6 @@
 use std::{ fs, io::{ self, Write } };
 
-pub fn tokenize(filename: &String) {
+pub fn tokenize(filename: &str) {
     let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
         writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
         String::new()
@@ -14,16 +14,16 @@ pub fn tokenize(filename: &String) {
             .for_each(|read| {
                 match read {
                     '\u{0028}' => {
-                        let _ = writeln!(io::stdout(), "LEFT_PAREN \u{0028} null");
+                        println!("LEFT_PAREN \u{0028} null");
                     }
                     '\u{0029}' => {
-                        let _ = writeln!(io::stdout(), "RIGHT_PAREN \u{0029} null");
+                        println!("RIGHT_PAREN \u{0029} null");
                     }
                     '\0'..='\'' | '*'..='\u{d7ff}' | '\u{e000}'..='\u{10ffff}' => todo!(),
                 }
             });
-        let _ = writeln!(io::stdout(), "EOF\u{0020}\u{0020}null");
+        println!("EOF  null");
     } else {
-        println!("EOF null"); // Placeholder, remove this line when implementing the scanner
+        println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
     }
 }
