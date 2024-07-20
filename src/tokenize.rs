@@ -22,7 +22,7 @@ pub fn tokenize(filename: &String) {
                     '\0'..='\'' | '*'..='\u{d7ff}' | '\u{e000}'..='\u{10ffff}' => todo!(),
                 }
             });
-        let _ = writeln!(io::stdout(), "EOF  null");
+        let _ = writeln!(io::stdout(), "EOF\u{0020}\u{0020}null");
     } else {
         println!("EOF null"); // Placeholder, remove this line when implementing the scanner
     }
