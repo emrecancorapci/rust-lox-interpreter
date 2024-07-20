@@ -1,4 +1,4 @@
-use std::{ fs, io::{ self, Write } };
+use std::{ collections::HashMap, fs, io::{ self, Write } };
 
 pub fn tokenize(filename: &str) {
     let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
@@ -6,21 +6,36 @@ pub fn tokenize(filename: &str) {
         String::new()
     });
 
+    let pairs = HashMap::from([
+        ('(', "LEFT_PAREN"),
+        (')', "RIGHT_PAREN"),
+        ('{', "LEFT_BRACE"),
+        ('}', "RIGHT_BRACE"),
+        ('*', "STAR"),
+        ('.', "DOT"),
+        (',', "COMMA"),
+        ('+', "PLUS"),
+    ]);
+
     // Uncomment this block to pass the first stage
     if !file_contents.is_empty() {
         file_contents
-            .chars()
+            .lines()
             .into_iter()
-            .for_each(|read| {
-                match read {
-                    '\u{0028}' => {
-                        println!("LEFT_PAREN \u{0028} null");
-                    }
-                    '\u{0029}' => {
-                        println!("RIGHT_PAREN \u{0029} null");
-                    }
-                    '\0'..='\'' | '*'..='\u{d7ff}' | '\u{e000}'..='\u{10ffff}' => todo!(),
-                }
+            .enumerate()
+            .for_each(|(line_num, line)| {
+                line.chars()
+                    .into_iter()
+                    .for_each(|ch| {
+                        match pairs.get(&ch) {
+                            Some(val) => {
+                                println!("{val} {ch} null");
+                            }
+                            None => {
+                                println!("[line {}] Error: Unexpected character: {ch}", line_num + 1)
+                            }
+                        }
+                    })
             });
         println!("EOF  null");
     } else {
