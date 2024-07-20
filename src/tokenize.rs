@@ -42,7 +42,7 @@ pub fn tokenize(filename: &str) {
                                 println!("{val} {ch} null");
                             }
                             None => {
-                                println!(
+                                eprintln!(
                                     "[line {}] Error: Unexpected character: {ch}",
                                     line_num + 1
                                 )
