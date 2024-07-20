@@ -14,10 +14,10 @@ pub fn tokenize(filename: &String) {
             .for_each(|read| {
                 match read {
                     '\u{0028}' => {
-                        let _ = writeln!(io::stdout(), "LEFT_PAREN ( null");
+                        let _ = writeln!(io::stdout(), "LEFT_PAREN \u{0028} null");
                     }
                     '\u{0029}' => {
-                        let _ = writeln!(io::stdout(), "RIGHT_PAREN ( null");
+                        let _ = writeln!(io::stdout(), "RIGHT_PAREN \u{0029} null");
                     }
                     '\0'..='\'' | '*'..='\u{d7ff}' | '\u{e000}'..='\u{10ffff}' => todo!(),
                 }
