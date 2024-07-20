@@ -1,6 +1,7 @@
 use std::env;
-use std::fs;
 use std::io::{ self, Write };
+
+mod tokenize;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -14,20 +15,10 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-                writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
-                String::new()
-            });
-
-            // Uncomment this block to pass the first stage
-            if !file_contents.is_empty() {
-                panic!("Scanner not implemented");
-            } else {
-                println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
-            }
+            tokenize::tokenize(filename);
         }
         _ => {
-            writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
+            let _ = writeln!(io::stderr(), "Unknown command: {}", command);
             return;
         }
     }
