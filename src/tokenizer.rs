@@ -176,9 +176,10 @@ impl Tokenizer {
     fn tokenize_identifier(&mut self, iterator: &mut Peekable<Chars>) {
         let mut string = String::new();
 
-        while let Some(ch) = iterator.next() {
+        while let Some(ch) = iterator.peek() {
             if matches!(ch, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
-                string.push(ch);
+                string.push(*ch);
+                iterator.next();
                 continue;
             } else {
                 break;
