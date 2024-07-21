@@ -122,22 +122,22 @@ impl Tokenizer {
     }
 
     fn tokenize_number(&mut self, iterator: &mut Peekable<Chars>) {
-        let mut literal = String::new();
+        let mut string = String::new();
 
         while let Some(ch) = iterator.peek() {
             match ch {
                 '0'..='9' => {
-                    literal.push(*ch);
+                    string.push(*ch);
 
                     iterator.next();
                 }
                 '.' => {
-                    if !literal.contains('.') {
-                        literal.push(*ch);
+                    if string.contains('.') {
+                        break;
+                    } else {
+                        string.push(*ch);
 
                         iterator.next();
-                    } else {
-                        break;
                     }
                 }
                 _ => {
@@ -146,28 +146,30 @@ impl Tokenizer {
             }
         }
 
-        if literal.ends_with('.') {
-            let _ = literal.pop();
-            let string = literal.clone();
-            literal.push_str(".0");
+        if string.contains('.') {
+            if string.ends_with('.') {
+                let _ = string.pop();
+                let literal = format!("{}.0", string);
 
-            self.tokens.push(Token::new(TokenType::Number, &string, &literal));
-            self.tokens.push(Token::new_punctuator(TokenType::Dot));
-        } else if !literal.contains('.') {
-            literal.push_str(".0");
-            let string = literal.split('.').take(1).next().unwrap().to_string();
+                self.tokens.push(Token::new(TokenType::Number, &string, &literal));
+                self.tokens.push(Token::new_punctuator(TokenType::Dot));
+            } else {
+                let mut literal = string.clone();
 
-            self.tokens.push(Token::new(TokenType::Number, &string, &literal));
+                while literal.ends_with('0') {
+                    literal.pop();
+                }
+
+                if literal.ends_with('.') {
+                    literal.push('0');
+                }
+
+                self.tokens.push(Token::new(TokenType::Number, &string, &literal));
+            }
         } else {
-            while literal.ends_with('0') {
-                literal.pop();
-            }
+            let literal = format!("{}.0", string);
 
-            if literal.ends_with('.') {
-                literal.push('0');
-            }
-
-            self.tokens.push(Token::new(TokenType::Number, &literal, &literal));
+            self.tokens.push(Token::new(TokenType::Number, &string, &literal));
         }
     }
 
