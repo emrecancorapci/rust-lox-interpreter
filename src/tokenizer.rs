@@ -99,11 +99,12 @@ impl Tokenizer {
 
     fn tokenize_string(&mut self, iterator: &mut Peekable<Chars>, index: usize) {
         let _ = iterator.next();
-        let mut string = String::new();
+        let mut string = String::from('\"');
 
         loop {
             match iterator.next() {
                 Some('"') => {
+                    string.push('\"');
                     self.tokens.push(Token::new(TokenType::String, &string, &string));
                     return;
                 }
