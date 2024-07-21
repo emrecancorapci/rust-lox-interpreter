@@ -56,8 +56,8 @@ impl Tokenizer {
                 self.tokenize_string(&mut iterator, index);
                 continue;
             }
-            
-            if matches!(ch,'0' ..= '9') {
+
+            if matches!(ch, '0'..='9') {
                 self.tokenize_number(&mut iterator, ch);
                 continue;
             }
@@ -112,21 +112,22 @@ impl Tokenizer {
             }
         }
     }
-    
+
     fn tokenize_number(&mut self, iterator: &mut Peekable<Chars>, ch: char) {
-        let mut string = ch.to_string();
+        let mut literal = ch.to_string();
+        let string;
         let mut is_dot_found = false;
 
         while let Some(ch) = iterator.peek() {
             match ch {
-                '0' ..= '9' => {
-                    string.push(*ch);
+                '0'..='9' => {
+                    literal.push(*ch);
 
                     iterator.next();
                 }
                 '.' => {
                     if !is_dot_found {
-                        string.push(*ch);
+                        literal.push(*ch);
                         is_dot_found = true;
 
                         iterator.next();
@@ -141,11 +142,15 @@ impl Tokenizer {
         }
 
         if !is_dot_found {
-            string.push_str(".0");
-        } else if string.ends_with('.') {
-            string.push('0');
+            literal.push_str(".0");
+            string = literal.clone();
+        } else if literal.ends_with('.') {
+            literal.push('0');
+            string = literal.chars().take(literal.len() - 2).collect::<String>();
+        } else {
+            string = literal.clone();
         }
 
-        self.tokens.push(Token::new(TokenType::Number, &string, &string));
+        self.tokens.push(Token::new(TokenType::Number, &string, &literal));
     }
 }
