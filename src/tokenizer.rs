@@ -1,8 +1,10 @@
 use std::{ fs, iter::Peekable, str::Chars };
 
-use token::{ Token, TokenType };
+use token::Token;
+use token_type::TokenType;
 use tokenizer_error::TokenizerError;
 
+pub mod token_type;
 mod tokenizer_error;
 mod token;
 
