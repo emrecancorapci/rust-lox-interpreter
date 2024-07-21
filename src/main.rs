@@ -1,7 +1,7 @@
 use std::{env, process};
 use std::io::{ self, Write };
 
-mod tokenize;
+mod tokenizer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -15,7 +15,11 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            let result = tokenize::tokenize(filename);
+            let mut tokenizer = tokenizer::Tokenizer::new();
+            tokenizer.tokenize(filename);
+
+            let result = tokenizer.print();
+
             process::exit(result);
         }
         _ => {
