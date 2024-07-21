@@ -55,8 +55,16 @@ fn print_punctuators(index: usize, line: &str) -> bool {
         }
 
         if print_pair(&ch).is_err() {
-            eprintln!("[line {}] Error: Unexpected character: {ch}", index + 1);
-            result = true;
+            match ch {
+                '\u{0009}' | ' ' => {
+                    continue;
+                }
+
+                _ => {
+                    eprintln!("[line {}] Error: Unexpected character: {ch}", index + 1);
+                    result = true;
+                }
+            }
         }
     }
 
