@@ -141,7 +141,9 @@ impl Tokenizer {
         }
 
         if !is_dot_found {
-            string.push_str(".0")
+            string.push_str(".0");
+        } else if string.ends_with('.') {
+            string.push('0');
         }
 
         self.tokens.push(Token::new(TokenType::Number, &string, &string));
