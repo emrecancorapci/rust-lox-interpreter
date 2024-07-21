@@ -1,4 +1,4 @@
-use std::{ collections::HashMap, fs };
+use std::{ collections::HashMap, fs, iter::Peekable, str::Chars };
 
 pub fn tokenize(filename: &str) -> i32 {
     let mut result = 0;
@@ -14,7 +14,7 @@ pub fn tokenize(filename: &str) -> i32 {
             .lines()
             .enumerate()
             .for_each(|(line_index, line)| {
-                if print_punctuators(line_index, line) {
+                if tokenize_line(line_index, line) {
                     result = 65;
                 }
             });
@@ -26,7 +26,7 @@ pub fn tokenize(filename: &str) -> i32 {
     return result;
 }
 
-fn print_punctuators(index: usize, line: &str) -> bool {
+fn tokenize_line(index: usize, line: &str) -> bool {
     let mut result = false;
 
     let double_pairs = HashMap::from([
@@ -40,15 +40,20 @@ fn print_punctuators(index: usize, line: &str) -> bool {
     let mut iterator = line.chars().into_iter().peekable();
 
     while let Some(ch) = iterator.next() {
-        if let Some(next_ch) = iterator.peek() {
-            let dp = format!("{}{}", ch, next_ch);
+        if ch == '"' {
+            tokenize_string(&mut iterator, index, &mut result);
+            continue;
+        }
 
-            if dp.as_str() == "//" {
+        if let Some(next_ch) = iterator.peek() {
+            let peeked = format!("{}{}", ch, next_ch);
+
+            if peeked.as_str() == "//" {
                 return result;
             }
 
-            if let Some(value) = double_pairs.get(dp.as_str()) {
-                println!("{value} {dp} null");
+            if let Some(value) = double_pairs.get(peeked.as_str()) {
+                println!("{value} {peeked} null");
                 iterator.next();
                 continue;
             }
@@ -69,6 +74,28 @@ fn print_punctuators(index: usize, line: &str) -> bool {
     }
 
     return result;
+}
+
+fn tokenize_string(iterator: &mut Peekable<Chars>, index: usize, result: &mut bool) {
+    let mut string = String::new();
+
+    'string_looper: loop {
+        match iterator.next() {
+            Some('"') => {
+                break 'string_looper;
+            }
+            Some(string_ch) => {
+                string.push(string_ch);
+            }
+            None => {
+                eprintln!("[line {}] Unterminated string.", index + 1);
+                *result = true;
+                break;
+            }
+        }
+    }
+
+    println!("STRING \"{string}\" {string}");
 }
 
 fn print_pair(ch: &char) -> Result<(), ()> {
