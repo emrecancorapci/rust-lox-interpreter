@@ -51,34 +51,38 @@ impl Tokenizer {
     fn tokenize_line(&mut self, index: usize, line: &str) {
         let mut iterator = line.chars().into_iter().peekable();
 
-        while let Some(ch) = iterator.next() {
-            if ch == '"' {
-                self.tokenize_string(&mut iterator, index);
-                continue;
-            }
-
-            if matches!(ch, '0'..='9') {
-                self.tokenize_number(&mut iterator, ch);
-                continue;
-            }
-
-            if let Some(next_ch) = iterator.peek() {
-                let peeked = format!("{}{}", ch, next_ch);
-
-                if peeked.as_str() == "//" {
-                    return;
-                }
-
-                let token_type = TokenType::from_two(&peeked);
-
-                if token_type != TokenType::None {
-                    self.tokens.push(Token::new_punctuator(token_type));
-                    iterator.next();
+        while let Some(ch) = iterator.peek() {
+            match ch {
+                '"' => {
+                    self.tokenize_string(&mut iterator, index);
                     continue;
                 }
-            }
+                '0'..='9' => {
+                    self.tokenize_number(&mut iterator);
+                    continue;
+                }
+                _ => {
+                    let ch = iterator.next().unwrap();
 
-            self.tokenize_char(ch, index);
+                    if let Some(next_ch) = iterator.peek() {
+                        let peeked = format!("{}{}", ch, next_ch);
+
+                        if peeked.as_str() == "//" {
+                            return;
+                        }
+
+                        let token_type = TokenType::from_two(&peeked);
+
+                        if token_type != TokenType::None {
+                            self.tokens.push(Token::new_punctuator(token_type));
+                            iterator.next();
+                            continue;
+                        }
+                    }
+
+                    self.tokenize_char(ch, index);
+                }
+            }
         }
     }
 
@@ -94,6 +98,7 @@ impl Tokenizer {
     }
 
     fn tokenize_string(&mut self, iterator: &mut Peekable<Chars>, index: usize) {
+        let _ = iterator.next();
         let mut string = String::new();
 
         loop {
@@ -113,10 +118,8 @@ impl Tokenizer {
         }
     }
 
-    fn tokenize_number(&mut self, iterator: &mut Peekable<Chars>, ch: char) {
-        let mut literal = ch.to_string();
-        let string;
-        let mut is_dot_found = false;
+    fn tokenize_number(&mut self, iterator: &mut Peekable<Chars>) {
+        let mut literal = String::new();
 
         while let Some(ch) = iterator.peek() {
             match ch {
@@ -126,9 +129,8 @@ impl Tokenizer {
                     iterator.next();
                 }
                 '.' => {
-                    if !is_dot_found {
+                    if !literal.contains('.') {
                         literal.push(*ch);
-                        is_dot_found = true;
 
                         iterator.next();
                     } else {
@@ -141,16 +143,20 @@ impl Tokenizer {
             }
         }
 
-        if !is_dot_found {
+        if literal.ends_with('.') {
+            let _ = literal.pop();
+            let string = literal.clone();
             literal.push_str(".0");
-            string = literal.clone();
-        } else if literal.ends_with('.') {
-            literal.push('0');
-            string = literal.chars().take(literal.len() - 2).collect::<String>();
-        } else {
-            string = literal.clone();
-        }
 
-        self.tokens.push(Token::new(TokenType::Number, &string, &literal));
+            self.tokens.push(Token::new(TokenType::Number, &string, &literal));
+            self.tokens.push(Token::new_punctuator(TokenType::Dot));
+        } else if !literal.contains('.') {
+            literal.push_str(".0");
+            let string = literal.split('.').take(1).next().unwrap().to_string();
+
+            self.tokens.push(Token::new(TokenType::Number, &string, &literal));
+        } else {
+            self.tokens.push(Token::new(TokenType::Number, &literal, &literal));
+        }
     }
 }
