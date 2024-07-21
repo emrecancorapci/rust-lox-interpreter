@@ -133,7 +133,7 @@ impl TokenType {
                 TokenType::Semicolon => "SEMICOLON",
                 TokenType::Slash => "SLASH",
                 TokenType::Star => "STAR",
-                TokenType::Bang => "Bang",
+                TokenType::Bang => "BANG",
                 TokenType::BangEqual => "BANG_EQUAL",
                 TokenType::Equal => "EQUAL",
                 TokenType::EqualEqual => "EQUAL_EQUAL",
