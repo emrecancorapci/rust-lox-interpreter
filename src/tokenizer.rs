@@ -186,6 +186,13 @@ impl Tokenizer {
             }
         }
 
-        self.tokens.push(Token::new_identifier(&string));
+        match TokenType::from_string(string.as_str()) {
+            TokenType::String => {
+                self.tokens.push(Token::new_identifier(&string));
+            },
+            token_type => {
+                self.tokens.push(Token::new_reserved(token_type));
+            }
+        }
     }
 }
