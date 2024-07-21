@@ -56,6 +56,11 @@ impl Tokenizer {
                 self.tokenize_string(&mut iterator, index);
                 continue;
             }
+            
+            if matches!(ch,'0' ..= '9') {
+                self.tokenize_number(&mut iterator, ch, index);
+                continue;
+            }
 
             if let Some(next_ch) = iterator.peek() {
                 let peeked = format!("{}{}", ch, next_ch);
@@ -106,5 +111,27 @@ impl Tokenizer {
                 }
             }
         }
+    }
+    
+    fn tokenize_number(&mut self, iterator: &mut Peekable<Chars>, ch: char, index: usize) {
+        let mut string = ch.to_string();
+
+        while let Some(num) = iterator.next() {
+            match num {
+                '0' ..= '9' | '.' => {
+                    string.push(num);
+                }
+                _ => {
+                    self.errors.push(TokenizerError::unexpected_char(num, index + 1));
+                    return;
+                }
+            }
+        }
+
+        if !string.contains(".") {
+            string.push_str(".0")
+        }
+
+        self.tokens.push(Token::new(TokenType::String, &string, &string));
     }
 }
