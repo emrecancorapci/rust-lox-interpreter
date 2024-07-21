@@ -41,7 +41,12 @@ fn tokenize_line(index: usize, line: &str) -> bool {
 
     while let Some(ch) = iterator.next() {
         if ch == '"' {
-            tokenize_string(&mut iterator, index, &mut result);
+            match tokenize_string(&mut iterator, index) {
+                true => {
+                    result = true;
+                }
+                false => {}
+            }
             continue;
         }
 
@@ -76,7 +81,7 @@ fn tokenize_line(index: usize, line: &str) -> bool {
     return result;
 }
 
-fn tokenize_string(iterator: &mut Peekable<Chars>, index: usize, result: &mut bool) {
+fn tokenize_string(iterator: &mut Peekable<Chars>, index: usize) -> bool {
     let mut string = String::new();
 
     'string_looper: loop {
@@ -88,14 +93,14 @@ fn tokenize_string(iterator: &mut Peekable<Chars>, index: usize, result: &mut bo
                 string.push(string_ch);
             }
             None => {
-                eprintln!("[line {}] Unterminated string.", index + 1);
-                *result = true;
-                break;
+                eprintln!("[line {}] Error: Unterminated string.", index + 1);
+                return true;
             }
         }
     }
 
     println!("STRING \"{string}\" {string}");
+    return false;
 }
 
 fn print_pair(ch: &char) -> Result<(), ()> {
