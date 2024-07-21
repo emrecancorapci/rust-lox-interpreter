@@ -5,21 +5,29 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, string: &String, literal: &String) -> Token {
-        Token {
+    pub fn new(token_type: TokenType, string: &String, literal: &String) -> Self {
+        Self {
             token_type,
             string: string.clone(),
             literal: literal.clone(),
         }
     }
 
-    pub fn new_punctuator(token_type: TokenType) -> Token {
+    pub fn new_punctuator(token_type: TokenType) -> Self {
         let string = token_type.get_lexeme();
 
-        Token {
+        Self {
             token_type,
             string,
             literal: "null".to_string(),
+        }
+    }
+
+    pub fn new_identifier(string: &str) -> Self {
+        Self {
+            token_type: TokenType::Identifier,
+            string: string.to_string(),
+            literal: "null".to_string()
         }
     }
 

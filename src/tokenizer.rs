@@ -59,6 +59,9 @@ impl Tokenizer {
                     self.tokenize_number(&mut iterator);
                     continue;
                 }
+                'a'..='z' | 'A'..='Z' | '_' => {
+                    self.tokenize_identifier(&mut iterator);
+                }
                 _ => {
                     let ch = iterator.next().unwrap();
 
@@ -158,5 +161,20 @@ impl Tokenizer {
         } else {
             self.tokens.push(Token::new(TokenType::Number, &literal, &literal));
         }
+    }
+
+    fn tokenize_identifier(&mut self, iterator: &mut Peekable<Chars>) {
+        let mut string = String::new();
+
+        while let Some(ch) = iterator.next() {
+            if matches!(ch, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
+                string.push(ch);
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        self.tokens.push(Token::new_identifier(&string));
     }
 }
