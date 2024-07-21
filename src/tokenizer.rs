@@ -159,6 +159,14 @@ impl Tokenizer {
 
             self.tokens.push(Token::new(TokenType::Number, &string, &literal));
         } else {
+            while literal.ends_with('0') {
+                literal.pop();
+            }
+
+            if literal.ends_with('.') {
+                literal.push('0');
+            }
+
             self.tokens.push(Token::new(TokenType::Number, &literal, &literal));
         }
     }
