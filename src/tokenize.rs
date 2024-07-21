@@ -75,6 +75,7 @@ fn print_pair(ch: &char) -> Result<(), ()> {
         ('/', "SLASH"),
         ('.', "DOT"),
         ('=', "EQUAL"),
+        ('!', "BANG")
     ]);
 
     match pairs.get(&ch) {
