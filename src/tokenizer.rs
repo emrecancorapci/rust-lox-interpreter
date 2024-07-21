@@ -132,6 +132,6 @@ impl Tokenizer {
             string.push_str(".0")
         }
 
-        self.tokens.push(Token::new(TokenType::String, &string, &string));
+        self.tokens.push(Token::new(TokenType::Number, &string, &string));
     }
 }
