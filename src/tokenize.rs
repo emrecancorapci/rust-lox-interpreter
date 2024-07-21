@@ -43,6 +43,10 @@ fn print_punctuators(index: usize, line: &str) -> bool {
         if let Some(next_ch) = iterator.peek() {
             let dp = format!("{}{}", ch, next_ch);
 
+            if dp.as_str() == "//" {
+                return result;
+            }
+
             if let Some(value) = double_pairs.get(dp.as_str()) {
                 println!("{value} {dp} null");
                 iterator.next();
@@ -75,7 +79,7 @@ fn print_pair(ch: &char) -> Result<(), ()> {
         ('/', "SLASH"),
         ('.', "DOT"),
         ('=', "EQUAL"),
-        ('!', "BANG")
+        ('!', "BANG"),
     ]);
 
     match pairs.get(&ch) {
