@@ -28,8 +28,6 @@ impl Tokenizer {
                 .for_each(|(line_index, line)| {
                     self.tokenize_line(line_index, line);
                 });
-        } else {
-            println!("EOF  null");
         }
     }
 
