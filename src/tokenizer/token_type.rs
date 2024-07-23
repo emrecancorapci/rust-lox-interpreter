@@ -1,7 +1,7 @@
 
 #[allow(dead_code)]
 #[derive(PartialEq, Eq)]
-pub enum TokenType {
+pub(crate) enum TokenType {
     // Single-character tokens.
     LeftParenthesis,
     RightParenthesis,
@@ -57,7 +57,7 @@ pub enum TokenType {
 }
 
 impl TokenType {
-    pub fn from_one(ch: &char) -> Self {
+    pub(crate) fn from_one(ch: &char) -> Self {
         match ch {
             '(' => Self::LeftParenthesis,
             ')' => Self::RightParenthesis,
@@ -80,7 +80,7 @@ impl TokenType {
         }
     }
 
-    pub fn from_two(char_pair: &str) -> Self {
+    pub(crate) fn from_two(char_pair: &str) -> Self {
         match char_pair {
             "!=" => Self::BangEqual,
             "==" => Self::EqualEqual,
@@ -90,7 +90,7 @@ impl TokenType {
         }
     }
 
-    pub fn from_string(string: &str) -> Self {
+    pub(crate) fn from_string(string: &str) -> Self {
         match string {
             "and" => Self::And,
             "class" => Self::Class,
@@ -112,7 +112,7 @@ impl TokenType {
         }
     }
 
-    pub fn get_type_string(&self) -> String {
+    pub(crate) fn get_type_string(&self) -> String {
         (
             match self {
                 Self::LeftParenthesis => "LEFT_PAREN",
@@ -159,7 +159,7 @@ impl TokenType {
         ).to_string()
     }
 
-    pub fn get_lexeme(&self) -> String {
+    pub(crate) fn get_lexeme(&self) -> String {
         (
             match self {
                 Self::LeftParenthesis => "(",

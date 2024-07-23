@@ -1,23 +1,23 @@
-use std::{ fs, iter::Peekable, str::Chars };
+use std::{ fs, iter::Peekable, ops::ControlFlow, str::Chars };
 
 use token::Token;
 use token_type::TokenType;
 use tokenizer_error::TokenizerError;
 
-pub mod token_type;
+pub(crate) mod token_type;
 mod tokenizer_error;
 mod token;
 
-pub struct Tokenizer {
+pub(crate) struct Tokenizer {
     errors: Vec<TokenizerError>,
     tokens: Vec<Token>,
 }
 
 impl Tokenizer {
-    pub fn new() -> Tokenizer {
+    pub(crate) fn new() -> Tokenizer {
         Tokenizer { errors: Vec::new(), tokens: Vec::new() }
     }
-    pub fn tokenize(&mut self, filename: &str) {
+    pub(crate) fn tokenize_file(&mut self, filename: &str) {
         let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
             eprintln!("Failed to read file {}", filename);
             String::new()
@@ -25,15 +25,15 @@ impl Tokenizer {
 
         if !file_contents.is_empty() {
             file_contents
-                .lines()
-                .enumerate()
-                .for_each(|(line_index, line)| {
-                    self.tokenize_line(line_index, line);
-                });
+            .lines()
+            .enumerate()
+            .for_each(|(line_index, line)| {
+                self.tokenize_line(line_index, line);
+            });
         }
     }
 
-    pub fn print(&self) -> i32 {
+    pub(crate) fn print(&self) -> i32 {
         self.errors.iter().for_each(|err| { err.print() });
         self.tokens.iter().for_each(|tkn| {
             tkn.print();
@@ -49,44 +49,45 @@ impl Tokenizer {
     }
 
     fn tokenize_line(&mut self, index: usize, line: &str) {
-        let mut iterator = line.chars().into_iter().peekable();
+        let mut iterator = line.chars().peekable();
 
         while let Some(ch) = iterator.peek() {
             match ch {
-                '"' => {
-                    self.tokenize_string(&mut iterator, index);
-                    continue;
-                }
-                '0'..='9' => {
-                    self.tokenize_number(&mut iterator);
-                    continue;
-                }
-                'a'..='z' | 'A'..='Z' | '_' => {
-                    self.tokenize_identifier(&mut iterator);
-                }
-                _ => {
-                    let ch = iterator.next().unwrap();
-
-                    if let Some(next_ch) = iterator.peek() {
-                        let peeked = format!("{}{}", ch, next_ch);
-
-                        if peeked.as_str() == "//" {
-                            return;
-                        }
-
-                        let token_type = TokenType::from_two(&peeked);
-
-                        if token_type != TokenType::None {
-                            self.tokens.push(Token::new_punctuator(token_type));
-                            iterator.next();
-                            continue;
-                        }
-                    }
-
-                    self.tokenize_char(ch, index);
+                '"' => self.tokenize_string(&mut iterator, index),
+                '0'..='9' => self.tokenize_number(&mut iterator),
+                'a'..='z' | 'A'..='Z' | '_' => self.tokenize_identifier(&mut iterator),
+                _ => if self.tokenize_characters(&mut iterator, index).is_break() {
+                    return;
                 }
             }
         }
+    }
+
+    fn tokenize_characters(
+        &mut self,
+        iterator: &mut Peekable<Chars<'_>>,
+        index: usize
+    ) -> ControlFlow<()> {
+        let ch = iterator.next().unwrap();
+
+        if let Some(next_ch) = iterator.peek() {
+            let peeked = format!("{}{}", ch, next_ch);
+
+            if peeked.as_str() == "//" {
+                return ControlFlow::Break(());
+            }
+
+            let token_type = TokenType::from_two(&peeked);
+
+            if token_type != TokenType::None {
+                self.tokens.push(Token::new_punctuator(token_type));
+                iterator.next();
+                return ControlFlow::Continue(());
+            }
+        }
+
+        self.tokenize_char(ch, index);
+        return ControlFlow::Continue(());
     }
 
     fn tokenize_char(&mut self, ch: char, index: usize) {
@@ -100,7 +101,7 @@ impl Tokenizer {
         }
     }
 
-    fn tokenize_string(&mut self, iterator: &mut Peekable<Chars>, index: usize) {
+    fn tokenize_string(&mut self, iterator: &mut Peekable<Chars<'_>>, index: usize) {
         let _ = iterator.next();
         let mut literal = String::new();
 
@@ -123,7 +124,7 @@ impl Tokenizer {
         }
     }
 
-    fn tokenize_number(&mut self, iterator: &mut Peekable<Chars>) {
+    fn tokenize_number(&mut self, iterator: &mut Peekable<Chars<'_>>) {
         let mut string = String::new();
 
         while let Some(ch) = iterator.peek() {
@@ -175,7 +176,7 @@ impl Tokenizer {
         }
     }
 
-    fn tokenize_identifier(&mut self, iterator: &mut Peekable<Chars>) {
+    fn tokenize_identifier(&mut self, iterator: &mut Peekable<Chars<'_>>) {
         let mut string = String::new();
 
         while let Some(ch) = iterator.peek() {
@@ -191,7 +192,7 @@ impl Tokenizer {
         match TokenType::from_string(string.as_str()) {
             TokenType::String => {
                 self.tokens.push(Token::new_identifier(&string));
-            },
+            }
             token_type => {
                 self.tokens.push(Token::new_reserved(token_type));
             }

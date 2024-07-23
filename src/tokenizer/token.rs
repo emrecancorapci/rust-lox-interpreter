@@ -1,21 +1,21 @@
 use super::token_type::TokenType;
 
-pub struct Token {
+pub(crate) struct Token {
     token_type: TokenType,
     string: String,
     literal: String,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, string: &String, literal: &String) -> Self {
+    pub(crate) fn new(token_type: TokenType, string: &str, literal: &str) -> Self {
         Self {
             token_type,
-            string: string.clone(),
-            literal: literal.clone(),
+            string: string.to_string(),
+            literal: literal.to_string(),
         }
     }
 
-    pub fn new_punctuator(token_type: TokenType) -> Self {
+    pub(crate) fn new_punctuator(token_type: TokenType) -> Self {
         let string = token_type.get_lexeme();
 
         Self {
@@ -25,7 +25,7 @@ impl Token {
         }
     }
 
-    pub fn new_identifier(string: &str) -> Self {
+    pub(crate) fn new_identifier(string: &str) -> Self {
         Self {
             token_type: TokenType::Identifier,
             string: string.to_string(),
@@ -33,7 +33,7 @@ impl Token {
         }
     }
 
-    pub fn new_reserved(token_type: TokenType) -> Self {
+    pub(crate) fn new_reserved(token_type: TokenType) -> Self {
         Self {
             string: token_type.get_lexeme(),
             token_type,
@@ -41,7 +41,7 @@ impl Token {
         }
     }
 
-    pub fn print(&self) {
+    pub(crate) fn print(&self) {
         println!("{} {} {}", self.token_type.get_type_string(), self.string, self.literal)
     }
 }

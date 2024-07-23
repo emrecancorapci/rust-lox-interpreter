@@ -1,3 +1,11 @@
+#![warn(
+    missing_debug_implementations,
+    rust_2018_idioms,
+    clippy::all
+)]
+#![allow(clippy::needless_return)]
+#![forbid(unsafe_code)]
+
 use std::{env, process};
 use std::io::{ self, Write };
 
@@ -6,7 +14,7 @@ mod tokenizer;
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
-        writeln!(io::stderr(), "Usage: {} tokenize <filename>", args[0]).unwrap();
+        eprintln!("Usage: {} tokenize <filename>", args[0]);
         return;
     }
 
@@ -16,7 +24,7 @@ fn main() {
     match command.as_str() {
         "tokenize" => {
             let mut tokenizer = tokenizer::Tokenizer::new();
-            tokenizer.tokenize(filename);
+            tokenizer.tokenize_file(filename);
 
             let result = tokenizer.print();
 
