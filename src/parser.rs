@@ -32,11 +32,12 @@ impl Parser {
         while let Some(ch) = iterator.peek() {
             match ch {
                 // '"' => self.tokenize_string(&mut iterator, index),
-                // '0'..='9' => self.tokenize_number(&mut iterator),
+                '0'..='9' => self.parse_number(&mut iterator),
                 'a'..='z' | 'A'..='Z' | '_' => self.parse_text(&mut iterator),
-                _ => { 
+                _ => {
                     iterator.next();
-                    continue; }
+                    continue;
+                }
                 // if self.tokenize_characters(&mut iterator, index).is_break() {
                 //     return;
                 // }
@@ -61,5 +62,39 @@ impl Parser {
             println!("{string}");
             return;
         }
+    }
+
+    fn parse_number(&mut self, iterator: &mut Peekable<Chars<'_>>) {
+        let mut number = String::new();
+
+        while let Some(ch) = iterator.peek() {
+            match ch {
+                '0'..='9' => {
+                    number.push(*ch);
+
+                    iterator.next();
+                }
+                '.' => {
+                    if number.contains('.') {
+                        break;
+                    } else {
+                        number.push(*ch);
+
+                        iterator.next();
+                    }
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        if !number.contains('.') {
+            number.push_str(".0");
+        } else if number.ends_with('.') {
+            number.push('0');
+        }
+
+        println!("{number}");
     }
 }
