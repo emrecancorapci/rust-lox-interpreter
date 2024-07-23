@@ -10,6 +10,7 @@ use std::{env, process};
 use std::io::{ self, Write };
 
 mod tokenizer;
+mod parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -29,6 +30,10 @@ fn main() {
             let result = tokenizer.print();
 
             process::exit(result);
+        }
+        "parse" => {
+            let mut parser = parser::Parser::new();
+            parser.parse_file(filename);
         }
         _ => {
             let _ = writeln!(io::stderr(), "Unknown command: {}", command);
