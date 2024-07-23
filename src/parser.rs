@@ -31,7 +31,7 @@ impl Parser {
 
         while let Some(ch) = iterator.peek() {
             match ch {
-                // '"' => self.tokenize_string(&mut iterator, index),
+                '"' => self.parse_string(&mut iterator, index),
                 '0'..='9' => self.parse_number(&mut iterator),
                 'a'..='z' | 'A'..='Z' | '_' => self.parse_text(&mut iterator),
                 _ => {
@@ -79,7 +79,6 @@ impl Parser {
                         break;
                     } else {
                         number.push(*ch);
-
                         iterator.next();
                     }
                 }
@@ -96,5 +95,25 @@ impl Parser {
         }
 
         println!("{number}");
+    }
+
+    fn parse_string(&mut self, iterator: &mut Peekable<Chars<'_>>, index: usize) {
+        let _ = iterator.next();
+        let mut string = String::new();
+
+        loop {
+            match iterator.next() {
+                Some('"') => {
+                    println!("{string}");
+                    return;
+                }
+                Some(ch) => {
+                    string.push(ch);
+                }
+                None => {
+                    return;
+                }
+            }
+        }
     }
 }
