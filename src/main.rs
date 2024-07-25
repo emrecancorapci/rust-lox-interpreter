@@ -34,6 +34,8 @@ fn main() {
         "parse" => {
             let mut parser = parser::Parser::new();
             parser.parse_file(filename);
+
+            parser.print();
         }
         _ => {
             let _ = writeln!(io::stderr(), "Unknown command: {}", command);

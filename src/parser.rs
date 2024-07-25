@@ -1,13 +1,21 @@
 use std::{ fs, iter::Peekable, str::Chars };
 
+use parser_error::ParserError;
+use syntax_tree::{ Binary, Expression };
+
+mod parser_error;
+mod syntax_tree;
+
 pub struct Parser {
-    placeholder: u8,
+    errors: Vec<ParserError>,
+    expression: Expression,
 }
 
 impl Parser {
     pub(crate) fn new() -> Self {
         Self {
-            placeholder: 1,
+            errors: Vec::new(),
+            expression: Expression::None,
         }
     }
     pub(crate) fn parse_file(&mut self, filename: &str) {
@@ -21,31 +29,52 @@ impl Parser {
                 .lines()
                 .enumerate()
                 .for_each(|(line_index, line)| {
-                    self.parse_line(line_index, line);
+                    let mut iterator = line.chars().peekable();
+
+                    match Self::parse(line_index, &mut iterator) {
+                        Ok(expression) => self.expression.add(expression),
+                        Err(err) => self.errors.push(err),
+                    }
                 });
         }
     }
 
-    fn parse_line(&mut self, index: usize, line: &str) {
-        let mut iterator = line.chars().peekable();
-
-        while let Some(ch) = iterator.peek() {
-            match ch {
-                '"' => self.parse_string(&mut iterator, index),
-                '0'..='9' => self.parse_number(&mut iterator),
-                'a'..='z' | 'A'..='Z' | '_' => self.parse_text(&mut iterator),
-                _ => {
-                    iterator.next();
-                    continue;
-                }
-                // if self.tokenize_characters(&mut iterator, index).is_break() {
-                //     return;
-                // }
-            }
+    pub(crate) fn print(&self) {
+        if self.errors.is_empty() {
+            println!("{}", self.expression.to_string())
+        } else {
+            self.errors.iter().for_each(|e| e.print());
         }
     }
 
-    fn parse_text(&mut self, iterator: &mut Peekable<Chars<'_>>) {
+    fn parse(index: usize, iterator: &mut Peekable<Chars<'_>>) -> Result<Expression, ParserError> {
+        let mut expression = Expression::None;
+
+        while let Some(ch) = iterator.peek() {
+            let mut answer = match ch {
+                '(' =>
+                    match Self::parse_group(iterator, index) {
+                        Ok(expr) => expr,
+                        Err(err) => {
+                            return Err(err);
+                        }
+                    }
+                '"' => Self::parse_string(iterator, index),
+                '0'..='9' => Self::parse_number(iterator),
+                'a'..='z' | 'A'..='Z' | '_' => Self::parse_text(iterator),
+                _ => {
+                    Self::parse_binary(iterator, &mut expression);
+                    continue;
+                }
+            };
+
+            expression.add(answer);
+        }
+
+        return Ok(expression);
+    }
+
+    fn parse_text(iterator: &mut Peekable<Chars<'_>>) -> Expression {
         let mut string = String::new();
 
         while let Some(ch) = iterator.peek() {
@@ -58,13 +87,15 @@ impl Parser {
             }
         }
 
-        if matches!(string.as_str(), "true" | "false" | "nil") {
-            println!("{string}");
-            return;
-        }
+        return match string.as_str() {
+            "true" => Expression::True,
+            "false" => Expression::False,
+            "nil" => Expression::Nil,
+            _ => Expression::None,
+        };
     }
 
-    fn parse_number(&mut self, iterator: &mut Peekable<Chars<'_>>) {
+    fn parse_number(iterator: &mut Peekable<Chars<'_>>) -> Expression {
         let mut number = String::new();
 
         while let Some(ch) = iterator.peek() {
@@ -94,26 +125,84 @@ impl Parser {
             number.push('0');
         }
 
-        println!("{number}");
+        return Expression::Number(number);
     }
 
-    fn parse_string(&mut self, iterator: &mut Peekable<Chars<'_>>, index: usize) {
+    fn parse_string(iterator: &mut Peekable<Chars<'_>>, _: usize) -> Expression {
         let _ = iterator.next();
         let mut string = String::new();
 
         loop {
             match iterator.next() {
                 Some('"') => {
-                    println!("{string}");
-                    return;
+                    return Expression::String(string);
                 }
                 Some(ch) => {
                     string.push(ch);
                 }
                 None => {
-                    return;
+                    return Expression::None;
                 }
             }
+        }
+    }
+
+    fn parse_binary(iterator: &mut Peekable<Chars<'_>>, expression: &mut Expression) {
+        let ch = iterator.next().unwrap();
+
+        let peek = iterator.peek().unwrap();
+
+        let binary_double = Binary::create_expression_double(
+            format!("{}{}", ch, peek).as_str(),
+            expression.clone()
+        );
+
+        match binary_double {
+            Expression::Binary(_) => {
+                *expression = binary_double;
+                iterator.next();
+            }
+            Expression::None => {
+                let binary_single = Binary::create_expression_single(ch, expression.clone());
+
+                match binary_single {
+                    Expression::Binary(_) => {
+                        *expression = binary_single;
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn parse_group(
+        iterator: &mut Peekable<Chars<'_>>,
+        index: usize
+    ) -> Result<Expression, ParserError> {
+        iterator.next();
+
+        let mut line = String::new();
+
+        loop {
+            match iterator.next() {
+                Some(')') => {
+                    break;
+                }
+                Some(ch) => {
+                    line.push(ch);
+                }
+                None => {
+                    return Err(ParserError::unmatched_paranthesis())
+                }
+            }
+        }
+
+        let mut new_iterator = line.chars().peekable();
+
+        match Self::parse(index, &mut new_iterator) {
+            Ok(expr) => Ok(Expression::Grouping(Box::new(expr))),
+            Err(err) => Err(err),
         }
     }
 }
