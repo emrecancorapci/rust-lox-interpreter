@@ -1,4 +1,3 @@
-
 #[allow(dead_code)]
 #[derive(PartialEq, Eq)]
 pub(crate) enum TokenType {
@@ -53,7 +52,7 @@ pub(crate) enum TokenType {
 
     // Whitespaces
     Whitespace,
-    Tab
+    Tab,
 }
 
 impl TokenType {
@@ -76,16 +75,6 @@ impl TokenType {
             '!' => Self::Bang,
             ' ' => Self::Whitespace,
             '\u{0009}' => Self::Tab,
-            _ => Self::None
-        }
-    }
-
-    pub(crate) fn from_two(char_pair: &str) -> Self {
-        match char_pair {
-            "!=" => Self::BangEqual,
-            "==" => Self::EqualEqual,
-            "<=" => Self::LessEqual,
-            ">=" => Self::GreaterEqual,
             _ => Self::None,
         }
     }
@@ -108,97 +97,95 @@ impl TokenType {
             "true" => Self::True,
             "var" => Self::Var,
             "while" => Self::While,
-            _ => Self::String
+            _ => Self::String,
         }
     }
 
     pub(crate) fn get_type_string(&self) -> String {
-        (
-            match self {
-                Self::LeftParenthesis => "LEFT_PAREN",
-                Self::RightParenthesis => "RIGHT_PAREN",
-                Self::LeftCurly => "LEFT_BRACE",
-                Self::RightCurly => "RIGHT_BRACE",
-                Self::Comma => "COMMA",
-                Self::Dot => "DOT",
-                Self::Minus => "MINUS",
-                Self::Plus => "PLUS",
-                Self::Semicolon => "SEMICOLON",
-                Self::Slash => "SLASH",
-                Self::Star => "STAR",
-                Self::Bang => "BANG",
-                Self::BangEqual => "BANG_EQUAL",
-                Self::Equal => "EQUAL",
-                Self::EqualEqual => "EQUAL_EQUAL",
-                Self::Greater => "GREATER",
-                Self::GreaterEqual => "GREATER_EQUAL",
-                Self::Less => "LESS",
-                Self::LessEqual => "LESS_EQUAL",
-                Self::Identifier => "IDENTIFIER",
-                Self::String => "STRING",
-                Self::Number => "NUMBER",
-                Self::And => "AND",
-                Self::Class => "CLASS",
-                Self::Else => "ELSE",
-                Self::False => "FALSE",
-                Self::Fun => "FUN",
-                Self::For => "FOR",
-                Self::If => "IF",
-                Self::Nil => "NIL",
-                Self::Or => "OR",
-                Self::Print => "PRINT",
-                Self::Return => "RETURN",
-                Self::Super => "SUPER",
-                Self::This => "THIS",
-                Self::True => "TRUE",
-                Self::Var => "VAR",
-                Self::While => "WHILE",
-                Self::EOF => "EOF",
-                _ => "",
-            }
-        ).to_string()
+        (match self {
+            Self::LeftParenthesis => "LEFT_PAREN",
+            Self::RightParenthesis => "RIGHT_PAREN",
+            Self::LeftCurly => "LEFT_BRACE",
+            Self::RightCurly => "RIGHT_BRACE",
+            Self::Comma => "COMMA",
+            Self::Dot => "DOT",
+            Self::Minus => "MINUS",
+            Self::Plus => "PLUS",
+            Self::Semicolon => "SEMICOLON",
+            Self::Slash => "SLASH",
+            Self::Star => "STAR",
+            Self::Bang => "BANG",
+            Self::BangEqual => "BANG_EQUAL",
+            Self::Equal => "EQUAL",
+            Self::EqualEqual => "EQUAL_EQUAL",
+            Self::Greater => "GREATER",
+            Self::GreaterEqual => "GREATER_EQUAL",
+            Self::Less => "LESS",
+            Self::LessEqual => "LESS_EQUAL",
+            Self::Identifier => "IDENTIFIER",
+            Self::String => "STRING",
+            Self::Number => "NUMBER",
+            Self::And => "AND",
+            Self::Class => "CLASS",
+            Self::Else => "ELSE",
+            Self::False => "FALSE",
+            Self::Fun => "FUN",
+            Self::For => "FOR",
+            Self::If => "IF",
+            Self::Nil => "NIL",
+            Self::Or => "OR",
+            Self::Print => "PRINT",
+            Self::Return => "RETURN",
+            Self::Super => "SUPER",
+            Self::This => "THIS",
+            Self::True => "TRUE",
+            Self::Var => "VAR",
+            Self::While => "WHILE",
+            Self::EOF => "EOF",
+            _ => "",
+        })
+        .to_string()
     }
 
     pub(crate) fn get_lexeme(&self) -> String {
-        (
-            match self {
-                Self::LeftParenthesis => "(",
-                Self::RightParenthesis => ")",
-                Self::LeftCurly => "{",
-                Self::RightCurly => "}",
-                Self::Comma => ",",
-                Self::Dot => ".",
-                Self::Minus => "-",
-                Self::Plus => "+",
-                Self::Semicolon => ";",
-                Self::Slash => "/",
-                Self::Star => "*",
-                Self::Bang => "!",
-                Self::BangEqual => "!=",
-                Self::Equal => "=",
-                Self::EqualEqual => "==",
-                Self::Greater => ">",
-                Self::GreaterEqual => ">=",
-                Self::Less => "<",
-                Self::LessEqual => "<=",
-                Self::And => "and",
-                Self::Class => "class",
-                Self::Else => "else",
-                Self::False => "false",
-                Self::Fun => "fun",
-                Self::For => "for",
-                Self::If => "if",
-                Self::Nil => "nil",
-                Self::Or => "or",
-                Self::Print => "print",
-                Self::Return => "return",
-                Self::Super => "super",
-                Self::This => "this",
-                Self::True => "true",
-                Self::Var => "var",
-                Self::While => "while",
-                _ => "",
-            }
-        ).to_string()
+        (match self {
+            Self::LeftParenthesis => "(",
+            Self::RightParenthesis => ")",
+            Self::LeftCurly => "{",
+            Self::RightCurly => "}",
+            Self::Comma => ",",
+            Self::Dot => ".",
+            Self::Minus => "-",
+            Self::Plus => "+",
+            Self::Semicolon => ";",
+            Self::Slash => "/",
+            Self::Star => "*",
+            Self::Bang => "!",
+            Self::BangEqual => "!=",
+            Self::Equal => "=",
+            Self::EqualEqual => "==",
+            Self::Greater => ">",
+            Self::GreaterEqual => ">=",
+            Self::Less => "<",
+            Self::LessEqual => "<=",
+            Self::And => "and",
+            Self::Class => "class",
+            Self::Else => "else",
+            Self::False => "false",
+            Self::Fun => "fun",
+            Self::For => "for",
+            Self::If => "if",
+            Self::Nil => "nil",
+            Self::Or => "or",
+            Self::Print => "print",
+            Self::Return => "return",
+            Self::Super => "super",
+            Self::This => "this",
+            Self::True => "true",
+            Self::Var => "var",
+            Self::While => "while",
+            _ => "",
+        })
+        .to_string()
     }
 }

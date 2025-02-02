@@ -1,22 +1,26 @@
-#![warn(
-    missing_debug_implementations,
-    rust_2018_idioms,
-    clippy::all
-)]
+#![warn(missing_debug_implementations, rust_2018_idioms, clippy::all)]
 #![allow(clippy::needless_return)]
 #![forbid(unsafe_code)]
 
+use std::io::{Error, ErrorKind};
 use std::{env, process};
-use std::io::{ self, Write };
 
-mod tokenizer;
+use tokenizer::Tokenizer;
+
 mod parser;
+mod tokenizer;
 
-fn main() {
+fn main() -> Result<(), Error> {
     let args: Vec<String> = env::args().collect();
+
     if args.len() < 3 {
-        eprintln!("Usage: {} tokenize <filename>", args[0]);
-        return;
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "This command needs at least two arguments. Usage: {} tokenize <filename>",
+                args[0]
+            ),
+        ));
     }
 
     let command = &args[1];
@@ -24,10 +28,9 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            let mut tokenizer = tokenizer::Tokenizer::new();
-            tokenizer.tokenize_file(filename);
+            let (tokens, errors) = Tokenizer::tokenize_file(filename)?;
 
-            let result = tokenizer.print();
+            let result = Tokenizer::serialize(&tokens, &errors);
 
             process::exit(result);
         }
@@ -38,9 +41,12 @@ fn main() {
             parser.print();
         }
         _ => {
-            let _ = writeln!(io::stderr(), "Unknown command: {}", command);
-            return;
+            return Err(Error::new(
+                ErrorKind::NotFound,
+                format!("Unknown command: {}", command),
+            ));
         }
     };
 
+    Ok(())
 }

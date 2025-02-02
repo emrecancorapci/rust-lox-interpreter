@@ -1,201 +1,259 @@
-use std::{ fs, iter::Peekable, ops::ControlFlow, str::Chars };
+use std::{fs, io::Error};
 
 use token::Token;
 use token_type::TokenType;
 use tokenizer_error::TokenizerError;
 
-pub(crate) mod token_type;
+pub mod token;
+pub mod token_type;
 mod tokenizer_error;
-mod token;
 
-pub(crate) struct Tokenizer {
-    errors: Vec<TokenizerError>,
-    tokens: Vec<Token>,
+pub struct Tokenizer {}
+
+#[derive(PartialEq)]
+enum TokenizerMode {
+    String,
+    Number(bool),
+    Identifier,
+    None,
 }
 
 impl Tokenizer {
-    pub(crate) fn new() -> Tokenizer {
-        Tokenizer { errors: Vec::new(), tokens: Vec::new() }
-    }
-    pub(crate) fn tokenize_file(&mut self, filename: &str) {
-        let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-            eprintln!("Failed to read file {}", filename);
-            String::new()
-        });
+    pub fn tokenize_file(filename: &str) -> Result<(Vec<Token>, Vec<TokenizerError>), Error> {
+        let file_contents = fs::read_to_string(filename)?;
+        let mut tokens: Vec<Token> = Vec::new();
+        let mut errors: Vec<TokenizerError> = Vec::new();
 
         if !file_contents.is_empty() {
-            file_contents
-            .lines()
-            .enumerate()
-            .for_each(|(line_index, line)| {
-                self.tokenize_line(line_index, line);
-            });
+            for (index, line) in file_contents.lines().enumerate() {
+                Tokenizer::tokenize_line(&mut tokens, &mut errors, index, line);
+            }
         }
+
+        tokens.push(Token::new_eof());
+
+        Ok((tokens, errors))
     }
 
-    pub(crate) fn print(&self) -> i32 {
-        self.errors.iter().for_each(|err| { err.print() });
-        self.tokens.iter().for_each(|tkn| {
-            tkn.print();
+    pub fn serialize(tokens: &Vec<Token>, errors: &Vec<TokenizerError>) -> i32 {
+        errors.iter().for_each(|err| err.print());
+        tokens.iter().for_each(|t| {
+            if !matches!(t.get_type(), TokenType::Whitespace | TokenType::Tab) {
+                t.print()
+            }
         });
 
-        println!("EOF  null");
-
-        if self.errors.is_empty() {
+        if errors.is_empty() {
             0
         } else {
             65
         }
     }
 
-    fn tokenize_line(&mut self, index: usize, line: &str) {
-        let mut iterator = line.chars().peekable();
+    fn tokenize_line(
+        tokens: &mut Vec<Token>,
+        errors: &mut Vec<TokenizerError>,
+        index: usize,
+        line: &str,
+    ) {
+        let mut iter = line.chars().enumerate().peekable();
+        let mut buffer = String::new();
+        let mut mode = TokenizerMode::None;
 
-        while let Some(ch) = iterator.peek() {
-            match ch {
-                '"' => self.tokenize_string(&mut iterator, index),
-                '0'..='9' => self.tokenize_number(&mut iterator),
-                'a'..='z' | 'A'..='Z' | '_' => self.tokenize_identifier(&mut iterator),
-                _ => if self.tokenize_characters(&mut iterator, index).is_break() {
-                    return;
+        while let Some((_, ch)) = iter.peek() {
+            match mode {
+                TokenizerMode::None => {
+                    let (_, ch) = iter.next().unwrap();
+
+                    mode = match ch {
+                        '"' => TokenizerMode::String,
+                        '0'..='9' => {
+                            buffer.push(ch);
+                            TokenizerMode::Number(false)
+                        }
+                        'a'..='z' | 'A'..='Z' | '_' => {
+                            buffer.push(ch);
+                            TokenizerMode::Identifier
+                        }
+                        '/' => {
+                            if matches!(iter.peek(), Some((_, '/'))) {
+                                return;
+                            } else {
+                                tokens.push(Token::new_punctuator(TokenType::Slash));
+                                TokenizerMode::None
+                            }
+                        }
+                        '=' if tokens.len() > 1 => {
+                            let token = tokens.pop().unwrap();
+
+                            match token.get_type() {
+                                &TokenType::Bang => {
+                                    tokens.push(Token::new_punctuator(TokenType::BangEqual));
+                                }
+                                &TokenType::Equal => {
+                                    tokens.push(Token::new_punctuator(TokenType::EqualEqual));
+                                }
+                                &TokenType::Greater => {
+                                    tokens.push(Token::new_punctuator(TokenType::GreaterEqual));
+                                }
+                                &TokenType::Less => {
+                                    tokens.push(Token::new_punctuator(TokenType::LessEqual));
+                                }
+                                _ => {
+                                    tokens.push(token);
+                                    tokens.push(Token::new_punctuator(TokenType::Equal));
+                                }
+                            }
+
+                            TokenizerMode::None
+                        }
+                        _ => match TokenType::from_one(&ch) {
+                            TokenType::None => {
+                                errors.push(TokenizerError::unexpected_char(ch, index + 1));
+                                TokenizerMode::None
+                            }
+                            token => {
+                                tokens.push(Token::new_punctuator(token));
+                                TokenizerMode::None
+                            }
+                        },
+                    };
                 }
-            }
-        }
-    }
+                TokenizerMode::String => {
+                    let (_, ch) = iter.next().unwrap();
 
-    fn tokenize_characters(
-        &mut self,
-        iterator: &mut Peekable<Chars<'_>>,
-        index: usize
-    ) -> ControlFlow<()> {
-        let ch = iterator.next().unwrap();
+                    match ch {
+                        '"' => {
+                            tokens.push(Token::new(
+                                TokenType::String,
+                                &buffer,
+                                format!("\"{}\"", buffer).as_str(),
+                            ));
 
-        if let Some(next_ch) = iterator.peek() {
-            let peeked = format!("{}{}", ch, next_ch);
-
-            if peeked.as_str() == "//" {
-                return ControlFlow::Break(());
-            }
-
-            let token_type = TokenType::from_two(&peeked);
-
-            if token_type != TokenType::None {
-                self.tokens.push(Token::new_punctuator(token_type));
-                iterator.next();
-                return ControlFlow::Continue(());
-            }
-        }
-
-        self.tokenize_char(ch, index);
-        return ControlFlow::Continue(());
-    }
-
-    fn tokenize_char(&mut self, ch: char, index: usize) {
-        let token_type = TokenType::from_one(&ch);
-
-        if token_type == TokenType::Tab || token_type == TokenType::Whitespace {
-        } else if token_type == TokenType::None {
-            self.errors.push(TokenizerError::unexpected_char(ch, index + 1));
-        } else {
-            self.tokens.push(Token::new_punctuator(token_type));
-        }
-    }
-
-    fn tokenize_string(&mut self, iterator: &mut Peekable<Chars<'_>>, index: usize) {
-        let _ = iterator.next();
-        let mut literal = String::new();
-
-        loop {
-            match iterator.next() {
-                Some('"') => {
-                    let string = format!("\"{literal}\"");
-
-                    self.tokens.push(Token::new(TokenType::String, &string, &literal));
-                    return;
-                }
-                Some(ch) => {
-                    literal.push(ch);
-                }
-                None => {
-                    self.errors.push(TokenizerError::unterminated_string(index + 1));
-                    return;
-                }
-            }
-        }
-    }
-
-    fn tokenize_number(&mut self, iterator: &mut Peekable<Chars<'_>>) {
-        let mut string = String::new();
-
-        while let Some(ch) = iterator.peek() {
-            match ch {
-                '0'..='9' => {
-                    string.push(*ch);
-
-                    iterator.next();
-                }
-                '.' => {
-                    if string.contains('.') {
-                        break;
-                    } else {
-                        string.push(*ch);
-
-                        iterator.next();
+                            buffer.clear();
+                            mode = TokenizerMode::None;
+                        }
+                        _ => buffer.push(ch),
                     }
                 }
-                _ => {
-                    break;
-                }
+                TokenizerMode::Number(false) => match ch {
+                    '0'..='9' => {
+                        buffer.push(iter.next().unwrap().1);
+                    }
+                    '.' => {
+                        buffer.push(iter.next().unwrap().1);
+                        mode = TokenizerMode::Number(true);
+                    }
+                    _ => {
+                        tokens.push(Token::new(
+                            TokenType::Number,
+                            buffer.as_str(),
+                            format!("{buffer}.0").as_str(),
+                        ));
+
+                        buffer.clear();
+                        mode = TokenizerMode::None;
+                    }
+                },
+                TokenizerMode::Number(true) => match ch {
+                    '0'..='9' => {
+                        let (_, ch) = iter.next().unwrap();
+
+                        buffer.push(ch);
+                    }
+                    _ if buffer.ends_with('.') => {
+                        tokens.push(Token::new(
+                            TokenType::Number,
+                            &buffer[..buffer.len() - 1],
+                            &format!("{buffer}0"),
+                        ));
+                        tokens.push(Token::new_punctuator(TokenType::Dot));
+
+                        buffer.clear();
+                        mode = TokenizerMode::None;
+                    }
+                    _ => {
+                        let mut literal = buffer.to_string();
+
+                        while literal.ends_with('0') {
+                            literal.pop();
+                        }
+                        if literal.ends_with('.') {
+                            literal.push('0');
+                        }
+
+                        tokens.push(Token::new(
+                            TokenType::Number,
+                            buffer.as_str(),
+                            literal.as_str(),
+                        ));
+
+                        buffer.clear();
+                        mode = TokenizerMode::None;
+                    }
+                },
+                TokenizerMode::Identifier => match ch {
+                    'a'..='z' | 'A'..='Z' | '0'..='9' | '_' => {
+                        buffer.push(iter.next().unwrap().1);
+                    }
+                    _ => {
+                        match TokenType::from_string(&buffer) {
+                            TokenType::String => {
+                                tokens.push(Token::new_identifier(&buffer));
+                            }
+                            token_type => {
+                                tokens.push(Token::new_reserved(token_type));
+                            }
+                        }
+
+                        buffer.clear();
+                        mode = TokenizerMode::None;
+                    }
+                },
             }
         }
-
-        if string.contains('.') {
-            if string.ends_with('.') {
-                let _ = string.pop();
-                let literal = format!("{}.0", string);
-
-                self.tokens.push(Token::new(TokenType::Number, &string, &literal));
-                self.tokens.push(Token::new_punctuator(TokenType::Dot));
-            } else {
-                let mut literal = string.clone();
+        match mode {
+            TokenizerMode::String => errors.push(TokenizerError::unterminated_string(index + 1)),
+            TokenizerMode::Number(false) => {
+                tokens.push(Token::new(
+                    TokenType::Number,
+                    buffer.as_str(),
+                    format!("{buffer}.0").as_str(),
+                ));
+            }
+            TokenizerMode::Number(true) if buffer.ends_with('.') => {
+                tokens.push(Token::new(
+                    TokenType::Number,
+                    &buffer[..buffer.len() - 1],
+                    &format!("{buffer}0"),
+                ));
+                tokens.push(Token::new_punctuator(TokenType::Dot));
+            }
+            TokenizerMode::Number(true) => {
+                let mut literal = buffer.to_string();
 
                 while literal.ends_with('0') {
                     literal.pop();
                 }
-
                 if literal.ends_with('.') {
                     literal.push('0');
                 }
 
-                self.tokens.push(Token::new(TokenType::Number, &string, &literal));
+                tokens.push(Token::new(
+                    TokenType::Number,
+                    buffer.as_str(),
+                    literal.as_str(),
+                ));
             }
-        } else {
-            let literal = format!("{}.0", string);
-
-            self.tokens.push(Token::new(TokenType::Number, &string, &literal));
-        }
-    }
-
-    fn tokenize_identifier(&mut self, iterator: &mut Peekable<Chars<'_>>) {
-        let mut string = String::new();
-
-        while let Some(ch) = iterator.peek() {
-            if matches!(ch, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
-                string.push(*ch);
-                iterator.next();
-                continue;
-            } else {
-                break;
-            }
-        }
-
-        match TokenType::from_string(string.as_str()) {
-            TokenType::String => {
-                self.tokens.push(Token::new_identifier(&string));
-            }
-            token_type => {
-                self.tokens.push(Token::new_reserved(token_type));
-            }
+            TokenizerMode::Identifier => match TokenType::from_string(&buffer) {
+                TokenType::String => {
+                    tokens.push(Token::new_identifier(&buffer));
+                }
+                token_type => {
+                    tokens.push(Token::new_reserved(token_type));
+                }
+            },
+            TokenizerMode::None => {}
         }
     }
 }
