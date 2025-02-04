@@ -29,10 +29,10 @@ fn main() -> Result<(), Error> {
             process::exit(result);
         }
         "parse" => {
-            let mut parser = parser::Parser::new();
-            parser.parse_file(filename);
+            let output = Tokenizer::tokenize(file_contents)?;
+            let expressions = Parser::parse_tokens(output.get_tokens());
 
-            parser.print();
+            println!("{expressions}");
         }
         _ => {
             return Err(Error::new(
