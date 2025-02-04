@@ -25,6 +25,16 @@ impl Expression {
         }
     }
 
+    pub fn has_slot(&self) -> bool {
+        match self {
+            Expression::Grouping(e) => e.has_slot(),
+            Expression::Binary(b) => b.has_slot(),
+            Expression::Unary(u) => u.has_slot(),
+            Expression::None => true,
+            _ => false,
+        }
+    }
+
     pub fn is_binary(&self) -> bool {
         match self {
             Expression::Binary(_) => true,

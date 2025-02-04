@@ -6,15 +6,38 @@ pub enum Unary {
     Minus(Expression),
 }
 
+impl Unary {
+    pub fn has_slot(&self) -> bool {
+        match self {
+            Unary::Bang(e) => e.has_slot(),
+            Unary::Minus(e) => e.has_slot(),
+        }
+    }
+}
+
 impl AddExpr for Unary {
     fn add_expr(&self, expr: Expression) -> AddExprResult {
+        dbg!(&expr);
         match self {
-            Unary::Bang(expression) if expression.is_none() => {
+            Unary::Bang(e) if e.is_none() => {
                 AddExprResult::Done(Expression::Unary(Box::new(Unary::Bang(expr))))
             }
-            Unary::Minus(expression) if expression.is_none() => {
+            Unary::Minus(e) if e.is_none() => {
                 AddExprResult::Done(Expression::Unary(Box::new(Unary::Minus(expr))))
             }
+            Unary::Bang(e) if e.has_slot() => match e.add_expr(expr) {
+                AddExprResult::Done(new_e) => {
+                    AddExprResult::Done(Expression::Unary(Box::new(Unary::Bang(new_e))))
+                }
+                AddExprResult::Error(_) => todo!(),
+                AddExprResult::Full => todo!(),
+            },
+            Unary::Minus(e) if e.is_none() => match e.add_expr(expr) {
+                AddExprResult::Done(new_e) => {
+                    AddExprResult::Done(Expression::Unary(Box::new(Unary::Minus(new_e))))
+                }
+                result => result,
+            },
             _ => AddExprResult::Full,
         }
     }

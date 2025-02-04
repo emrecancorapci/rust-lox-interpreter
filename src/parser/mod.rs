@@ -39,7 +39,7 @@ impl Parser {
                     None => AddExprResult::Error("No left paranthesis".to_string()),
                 },
                 TokenType::Minus => match expr {
-                    Expression::Binary(ref binary) if binary.is_full() => {
+                    Expression::Binary(ref b) if !b.has_slot() => {
                         let add = Expression::Unary(Box::new(Unary::Minus(Expression::None)));
 
                         expr_base.add_expr(add)
@@ -124,12 +124,14 @@ impl Parser {
 
                     expr_base.add_expr(add)
                 }
+
                 // Unary
                 TokenType::Bang => {
                     let add = Expression::Unary(Box::new(Unary::Bang(Expression::None)));
 
                     expr_base.add_expr(add)
                 }
+
                 // Values
                 TokenType::Number => {
                     let add = Expression::Number(token.get_literal().to_string());
@@ -171,7 +173,7 @@ impl Parser {
                     }
                 }
                 AddExprResult::Error(err) => panic!("{err}"),
-                AddExprResult::Full => todo!(),
+                AddExprResult::Full => panic!("Statement was full"),
             }
         }
 

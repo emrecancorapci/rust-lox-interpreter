@@ -67,7 +67,7 @@ fn grouping() {
     assert_eq!(parse(input), expected.to_string());
 
     let input = "(1 + 3) + \"hi\"";
-    let expected = "(+ (group (+ 1.0 3.0)) \"hi\")";
+    let expected = "(+ (group (+ 1.0 3.0)) hi)";
 
     assert_eq!(parse(input), expected.to_string());
 

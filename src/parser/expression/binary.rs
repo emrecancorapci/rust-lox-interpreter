@@ -29,6 +29,21 @@ impl Binary {
             Binary::Slash(e1, e2) => !(e1.is_none() || e2.is_none()),
         }
     }
+
+    pub fn has_slot(&self) -> bool {
+        match self {
+            Binary::EqualEqual(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::BangEqual(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::Greater(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::GreaterEqual(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::Less(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::LessEqual(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::Plus(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::Minus(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::Star(e1, e2) => e1.is_none() || e2.is_none(),
+            Binary::Slash(e1, e2) => e1.is_none() || e2.is_none(),
+        }
+    }
 }
 
 impl std::fmt::Display for Binary {
@@ -71,25 +86,30 @@ impl std::fmt::Display for Binary {
 impl AddExpr for Binary {
     fn add_expr(&self, expr: Expression) -> AddExprResult {
         match self {
-            Binary::EqualEqual(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
-                AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
-                    Binary::EqualEqual(ne, e2.clone()),
-                ))),
-                r => r,
-            },
+            Binary::EqualEqual(e1, e2) if e1.is_binary() && e1.has_slot() => {
+                match e1.add_expr(expr) {
+                    AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
+                        Binary::EqualEqual(ne, e2.clone()),
+                    ))),
+                    r => r,
+                }
+            }
             Binary::EqualEqual(e1, e2) if e1.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::EqualEqual(expr, e2.clone())),
             )),
-            Binary::EqualEqual(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
-                AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
-                    Binary::EqualEqual(e1.clone(), ne),
-                ))),
-                r => r,
-            },
+            Binary::EqualEqual(e1, e2) if e2.is_binary() && e2.has_slot() => {
+                match e2.add_expr(expr) {
+                    AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
+                        Binary::EqualEqual(e1.clone(), ne),
+                    ))),
+                    r => r,
+                }
+            }
             Binary::EqualEqual(e1, e2) if e2.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::EqualEqual(e1.clone(), expr)),
             )),
-            Binary::BangEqual(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::BangEqual(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr)
+            {
                 AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                     Binary::BangEqual(ne, e2.clone()),
                 ))),
@@ -98,7 +118,8 @@ impl AddExpr for Binary {
             Binary::BangEqual(e1, e2) if e1.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::BangEqual(expr, e2.clone())),
             )),
-            Binary::BangEqual(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::BangEqual(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr)
+            {
                 AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                     Binary::BangEqual(e1.clone(), ne),
                 ))),
@@ -107,7 +128,7 @@ impl AddExpr for Binary {
             Binary::BangEqual(e1, e2) if e2.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::BangEqual(e1.clone(), expr)),
             )),
-            Binary::GreaterEqual(e1, e2) if e1.is_binary_and_not_full() => {
+            Binary::GreaterEqual(e1, e2) if e1.is_binary() && e1.has_slot() => {
                 match e1.add_expr(expr) {
                     AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                         Binary::GreaterEqual(ne, e2.clone()),
@@ -118,7 +139,7 @@ impl AddExpr for Binary {
             Binary::GreaterEqual(e1, e2) if e1.is_none() => AddExprResult::Done(
                 Expression::Binary(Box::new(Binary::GreaterEqual(expr, e2.clone()))),
             ),
-            Binary::GreaterEqual(e1, e2) if e2.is_binary_and_not_full() => {
+            Binary::GreaterEqual(e1, e2) if e2.is_binary() && e2.has_slot() => {
                 match e2.add_expr(expr) {
                     AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                         Binary::GreaterEqual(e1.clone(), ne),
@@ -129,7 +150,7 @@ impl AddExpr for Binary {
             Binary::GreaterEqual(e1, e2) if e2.is_none() => AddExprResult::Done(
                 Expression::Binary(Box::new(Binary::GreaterEqual(e1.clone(), expr))),
             ),
-            Binary::Greater(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::Greater(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr) {
                 AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                     Binary::Greater(ne, e2.clone()),
                 ))),
@@ -138,7 +159,7 @@ impl AddExpr for Binary {
             Binary::Greater(e1, e2) if e1.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::Greater(expr, e2.clone())),
             )),
-            Binary::Greater(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::Greater(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr) {
                 AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                     Binary::Greater(e1.clone(), ne),
                 ))),
@@ -147,7 +168,8 @@ impl AddExpr for Binary {
             Binary::Greater(e1, e2) if e2.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::Greater(e1.clone(), expr)),
             )),
-            Binary::LessEqual(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::LessEqual(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr)
+            {
                 AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                     Binary::LessEqual(ne, e2.clone()),
                 ))),
@@ -156,7 +178,8 @@ impl AddExpr for Binary {
             Binary::LessEqual(e1, e2) if e1.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::LessEqual(expr, e2.clone())),
             )),
-            Binary::LessEqual(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::LessEqual(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr)
+            {
                 AddExprResult::Done(ne) => AddExprResult::Done(Expression::Binary(Box::new(
                     Binary::LessEqual(e1.clone(), ne),
                 ))),
@@ -165,7 +188,7 @@ impl AddExpr for Binary {
             Binary::LessEqual(e1, e2) if e2.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::LessEqual(e1.clone(), expr)),
             )),
-            Binary::Less(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::Less(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Less(ne, e2.clone()))))
                 }
@@ -174,7 +197,7 @@ impl AddExpr for Binary {
             Binary::Less(e1, e2) if e1.is_none() => {
                 AddExprResult::Done(Expression::Binary(Box::new(Binary::Less(expr, e2.clone()))))
             }
-            Binary::Less(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::Less(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Less(e1.clone(), ne))))
                 }
@@ -183,7 +206,7 @@ impl AddExpr for Binary {
             Binary::Less(e1, e2) if e2.is_none() => {
                 AddExprResult::Done(Expression::Binary(Box::new(Binary::Less(e1.clone(), expr))))
             }
-            Binary::Plus(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::Plus(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Plus(ne, e2.clone()))))
                 }
@@ -192,7 +215,7 @@ impl AddExpr for Binary {
             Binary::Plus(e1, e2) if e1.is_none() => {
                 AddExprResult::Done(Expression::Binary(Box::new(Binary::Plus(expr, e2.clone()))))
             }
-            Binary::Plus(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::Plus(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Plus(e1.clone(), ne))))
                 }
@@ -202,7 +225,7 @@ impl AddExpr for Binary {
                 AddExprResult::Done(Expression::Binary(Box::new(Binary::Plus(e1.clone(), expr))))
             }
 
-            Binary::Minus(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::Minus(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Minus(ne, e2.clone()))))
                 }
@@ -211,7 +234,7 @@ impl AddExpr for Binary {
             Binary::Minus(e1, e2) if e1.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::Minus(expr, e2.clone())),
             )),
-            Binary::Minus(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::Minus(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Minus(e1.clone(), ne))))
                 }
@@ -220,7 +243,7 @@ impl AddExpr for Binary {
             Binary::Minus(e1, e2) if e2.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::Minus(e1.clone(), expr)),
             )),
-            Binary::Star(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::Star(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Star(ne, e2.clone()))))
                 }
@@ -229,7 +252,7 @@ impl AddExpr for Binary {
             Binary::Star(e1, e2) if e1.is_none() => {
                 AddExprResult::Done(Expression::Binary(Box::new(Binary::Star(expr, e2.clone()))))
             }
-            Binary::Star(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::Star(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Star(e1.clone(), ne))))
                 }
@@ -238,7 +261,7 @@ impl AddExpr for Binary {
             Binary::Star(e1, e2) if e2.is_none() => {
                 AddExprResult::Done(Expression::Binary(Box::new(Binary::Star(e1.clone(), expr))))
             }
-            Binary::Slash(e1, e2) if e1.is_binary_and_not_full() => match e1.add_expr(expr) {
+            Binary::Slash(e1, e2) if e1.is_binary() && e1.has_slot() => match e1.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Slash(ne, e2.clone()))))
                 }
@@ -247,7 +270,7 @@ impl AddExpr for Binary {
             Binary::Slash(e1, e2) if e1.is_none() => AddExprResult::Done(Expression::Binary(
                 Box::new(Binary::Slash(expr, e2.clone())),
             )),
-            Binary::Slash(e1, e2) if e2.is_binary_and_not_full() => match e2.add_expr(expr) {
+            Binary::Slash(e1, e2) if e2.is_binary() && e2.has_slot() => match e2.add_expr(expr) {
                 AddExprResult::Done(ne) => {
                     AddExprResult::Done(Expression::Binary(Box::new(Binary::Slash(e1.clone(), ne))))
                 }
