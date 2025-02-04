@@ -42,7 +42,7 @@ impl Tokenizer {
                                 TokenizerMode::None
                             }
                         }
-                        '=' if tokens.len() > 1 => {
+                        '=' if tokens.len() >= 1 => {
                             let token = tokens.pop().unwrap();
 
                             match token.get_type() {
@@ -68,6 +68,7 @@ impl Tokenizer {
                         }
                         _ => match TokenType::from_one(&ch) {
                             TokenType::None => {
+                                tokens.push(Token::new_unknown());
                                 errors.push(TokenizerError::unexpected_char(ch, index + 1));
                                 TokenizerMode::None
                             }
@@ -85,8 +86,8 @@ impl Tokenizer {
                         '"' => {
                             tokens.push(Token::new(
                                 TokenType::String,
-                                &buffer,
                                 format!("\"{}\"", buffer).as_str(),
+                                &buffer,
                             ));
 
                             buffer.clear();

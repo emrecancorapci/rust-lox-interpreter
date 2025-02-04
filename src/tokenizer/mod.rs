@@ -27,7 +27,10 @@ impl Tokenizer {
     pub fn serialize(tokens: &Vec<Token>, errors: &Vec<TokenizerError>) -> i32 {
         errors.iter().for_each(|err| err.print());
         tokens.iter().for_each(|t| {
-            if !matches!(t.get_type(), TokenType::Whitespace | TokenType::Tab) {
+            if !matches!(
+                t.get_type(),
+                TokenType::Whitespace | TokenType::Tab | TokenType::Unkonwn
+            ) {
                 t.print()
             }
         });
@@ -48,6 +51,15 @@ pub struct TokenizerOutput {
 impl TokenizerOutput {
     pub fn get_tokens(&self) -> &Vec<Token> {
         &self.tokens
+    }
+
+    pub fn filter_empty(&self) -> impl FnOnce(&&Token) -> bool {
+        |t: &&Token| {
+            !matches!(
+                t.get_type(),
+                TokenType::Whitespace | TokenType::Tab | TokenType::Unkonwn
+            )
+        }
     }
 
     pub fn get_errors(&self) -> &Vec<TokenizerError> {

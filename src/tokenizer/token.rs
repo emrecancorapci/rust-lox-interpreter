@@ -57,6 +57,14 @@ impl Token {
         }
     }
 
+    pub(super) fn new_unknown() -> Self {
+        Self {
+            token_type: TokenType::Unkonwn,
+            string: "".to_string(),
+            literal: "".to_string(),
+        }
+    }
+
     pub(super) fn print(&self) {
         println!(
             "{} {} {}",
