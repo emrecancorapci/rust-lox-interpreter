@@ -17,7 +17,6 @@ impl Unary {
 
 impl AddExpr for Unary {
     fn add_expr(&self, expr: Expression) -> AddExprResult {
-        dbg!(&expr);
         match self {
             Unary::Bang(e) if e.is_none() => {
                 AddExprResult::Done(Expression::Unary(Box::new(Unary::Bang(expr))))
