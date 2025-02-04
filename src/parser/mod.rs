@@ -15,9 +15,9 @@ impl Parser {
 
         for token in tokens.iter() {
             let expr_base = if groups.is_empty() {
-                dbg!(&expr)
+                &expr
             } else {
-                dbg!(groups.last().unwrap())
+                groups.last().unwrap()
             };
 
             let result = match token.get_type() {

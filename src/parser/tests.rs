@@ -47,7 +47,7 @@ fn unaries() {
     let expected = "(! false)";
 
     assert_eq!(parse(input), expected.to_string());
-    
+
     let input = "4 + -1";
     let expected = "(+ 4.0 (- 1.0 ))";
 
@@ -75,6 +75,11 @@ fn grouping() {
     let expected = "(+ (group (+ 1.0 3.0)) (/ (group (* 3.0 8.0)) 2.0))";
 
     assert_eq!(parse(input), expected.to_string());
+
+    let input = "((true))";
+    let expected = "(group (group true))";
+
+    assert_eq!(parse(input), expected.to_string());
 }
 
 #[test]
@@ -96,6 +101,14 @@ fn order_of_opreations() {
 
     let input = "1 + 3 * 5 / 2 + 4";
     let expected = "(+ (+ 1.0 (/ (* 3.0 5.0) 2.0)) 4.0)";
+
+    assert_eq!(parse(input), expected.to_string());
+}
+
+#[test]
+fn complex() {
+    let input = "((true) + 1.5 - 34 * 21 / (2.53 - -1))";
+    let expected = "(group (- (+ (group true) 1.5) (/ (* 34.0 21.0) (group (- 2.53 (- 1.0 ))))))";
 
     assert_eq!(parse(input), expected.to_string());
 }
