@@ -1,14 +1,4 @@
-use std::{fs, io::Error};
-
-use token::Token;
-use token_type::TokenType;
-use tokenizer_error::TokenizerError;
-
-pub mod token;
-pub mod token_type;
-mod tokenizer_error;
-
-pub struct Tokenizer {}
+use super::{Token, TokenType, Tokenizer, TokenizerError};
 
 #[derive(PartialEq)]
 enum TokenizerMode {
@@ -19,38 +9,7 @@ enum TokenizerMode {
 }
 
 impl Tokenizer {
-    pub fn tokenize_file(filename: &str) -> Result<(Vec<Token>, Vec<TokenizerError>), Error> {
-        let file_contents = fs::read_to_string(filename)?;
-        let mut tokens: Vec<Token> = Vec::new();
-        let mut errors: Vec<TokenizerError> = Vec::new();
-
-        if !file_contents.is_empty() {
-            for (index, line) in file_contents.lines().enumerate() {
-                Tokenizer::tokenize_line(&mut tokens, &mut errors, index, line);
-            }
-        }
-
-        tokens.push(Token::new_eof());
-
-        Ok((tokens, errors))
-    }
-
-    pub fn serialize(tokens: &Vec<Token>, errors: &Vec<TokenizerError>) -> i32 {
-        errors.iter().for_each(|err| err.print());
-        tokens.iter().for_each(|t| {
-            if !matches!(t.get_type(), TokenType::Whitespace | TokenType::Tab) {
-                t.print()
-            }
-        });
-
-        if errors.is_empty() {
-            0
-        } else {
-            65
-        }
-    }
-
-    fn tokenize_line(
+    pub(super) fn tokenize_line(
         tokens: &mut Vec<Token>,
         errors: &mut Vec<TokenizerError>,
         index: usize,

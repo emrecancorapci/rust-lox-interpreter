@@ -11,6 +11,10 @@ impl Token {
         &self.token_type
     }
 
+    pub fn get_literal(&self) -> &str {
+        &self.literal
+    }
+
     pub(super) fn new(token_type: TokenType, string: &str, literal: &str) -> Self {
         Self {
             token_type,

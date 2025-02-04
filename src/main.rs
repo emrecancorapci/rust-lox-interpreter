@@ -1,14 +1,8 @@
-#![warn(missing_debug_implementations, rust_2018_idioms, clippy::all)]
-#![allow(clippy::needless_return)]
-#![forbid(unsafe_code)]
-
 use std::io::{Error, ErrorKind};
-use std::{env, process};
+use std::{env, fs, process};
 
-use tokenizer::Tokenizer;
-
-mod parser;
-mod tokenizer;
+use interpreter_starter_rust::parser::Parser;
+use interpreter_starter_rust::tokenizer::Tokenizer;
 
 fn main() -> Result<(), Error> {
     let args: Vec<String> = env::args().collect();
@@ -25,12 +19,12 @@ fn main() -> Result<(), Error> {
 
     let command = &args[1];
     let filename = &args[2];
+    let file_contents = fs::read_to_string(filename)?;
 
     match command.as_str() {
         "tokenize" => {
-            let (tokens, errors) = Tokenizer::tokenize_file(filename)?;
-
-            let result = Tokenizer::serialize(&tokens, &errors);
+            let output = Tokenizer::tokenize(file_contents)?;
+            let result = Tokenizer::serialize(output.get_tokens(), output.get_errors());
 
             process::exit(result);
         }
