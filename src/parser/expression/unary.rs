@@ -1,47 +1,60 @@
-use super::{AddExpr, AddExprResult, Expression};
+use super::{AddExpr, Expression, IsPartial};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub enum Unary {
-    Bang(Expression),
-    Minus(Expression),
+pub enum UnaryType {
+    Bang,
+    Minus,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Unary {
+    unary_type: UnaryType,
+    expression: Box<Expression>,
 }
 
 impl Unary {
-    pub fn has_slot(&self) -> bool {
-        match self {
-            Unary::Bang(e) => e.has_slot(),
-            Unary::Minus(e) => e.has_slot(),
+    fn new(unary_type: UnaryType, expr: Expression) -> Self {
+        Self {
+            unary_type,
+            expression: Box::new(expr),
         }
+    }
+    pub fn new_bang(expr: Expression) -> Self {
+        Self::new(UnaryType::Bang, expr)
+    }
+    pub fn new_bang_expr(expr: Expression) -> Expression {
+        Expression::Unary(Self::new_bang(expr))
+    }
+    pub fn new_minus(expr: Expression) -> Self {
+        Self::new(UnaryType::Minus, expr)
+    }
+    pub fn new_minus_expr(expr: Expression) -> Expression {
+        Expression::Unary(Self::new_minus(expr))
+    }
+}
+
+impl IsPartial for Unary {
+    fn is_partial(&self) -> bool {
+        self.expression.is_partial()
     }
 }
 
 impl AddExpr for Unary {
-    fn add_expr(&self, expr: Expression) -> AddExprResult {
-        match self {
-            Unary::Bang(e) if e.is_none() => {
-                AddExprResult::Done(Expression::Unary(Box::new(Unary::Bang(expr))))
+    fn add_expr(&self, expr: Expression) -> Result<Expression, String> {
+        match self.unary_type {
+            UnaryType::Bang if self.expression.is_none() => Ok(Self::new_bang_expr(expr)),
+            UnaryType::Minus if self.expression.is_none() => Ok(Self::new_minus_expr(expr)),
+            UnaryType::Bang if self.expression.is_partial() => {
+                Ok(Self::new_bang_expr(self.expression.add_expr(expr)?))
             }
-            Unary::Minus(e) if e.is_none() => {
-                AddExprResult::Done(Expression::Unary(Box::new(Unary::Minus(expr))))
+            UnaryType::Minus if self.expression.is_partial() => {
+                Ok(Self::new_minus_expr(self.expression.add_expr(expr)?))
             }
-            Unary::Bang(e) if e.has_slot() => match e.add_expr(expr) {
-                AddExprResult::Done(new_e) => {
-                    AddExprResult::Done(Expression::Unary(Box::new(Unary::Bang(new_e))))
-                }
-                AddExprResult::Error(_) => todo!(),
-                AddExprResult::Full => todo!(),
-            },
-            Unary::Minus(e) if e.is_none() => match e.add_expr(expr) {
-                AddExprResult::Done(new_e) => {
-                    AddExprResult::Done(Expression::Unary(Box::new(Unary::Minus(new_e))))
-                }
-                result => result,
-            },
-            Unary::Bang(e) if expr.is_binary() => {
-                expr.add_expr(Expression::Unary(Box::new(Unary::Bang(e.clone()))))
+            UnaryType::Bang if expr.is_binary() => {
+                expr.add_expr(Unary::new_bang_expr(self.expression.as_ref().clone()))
             }
-            Unary::Minus(e) if expr.is_binary() => {
-                expr.add_expr(Expression::Unary(Box::new(Unary::Minus(e.clone()))))
+            UnaryType::Minus if expr.is_binary() => {
+                expr.add_expr(Unary::new_minus_expr(self.expression.as_ref().clone()))
             }
             _ => panic!("Unary is full"),
         }
@@ -50,9 +63,9 @@ impl AddExpr for Unary {
 
 impl std::fmt::Display for Unary {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Unary::Bang(e) => write!(f, "(! {e})"),
-            Unary::Minus(e) => write!(f, "(- {e})"),
+        match self.unary_type {
+            UnaryType::Bang => write!(f, "(! {})", self.expression),
+            UnaryType::Minus => write!(f, "(- {})", self.expression),
         }
     }
 }

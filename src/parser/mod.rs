@@ -1,9 +1,12 @@
-use expression::{binary::Binary, unary::Unary, AddExpr, AddExprResult, Expression};
+use expression::{
+    binary::{Binary, BinaryType},
+    unary::Unary,
+    AddExpr, Expression, IsPartial,
+};
 
 use crate::tokenizer::{token::Token, token_type::TokenType};
 
 pub mod expression;
-#[cfg(test)]
 mod tests;
 
 pub struct Parser {}
@@ -37,24 +40,15 @@ impl Parser {
                                 .add_expr(Expression::Grouping(Box::new(group_expr)))
                         }
                     }
-                    None => AddExprResult::Error("No left paranthesis".to_string()),
+                    None => Err("No left paranthesis".to_string()),
                 },
                 TokenType::Minus => match expr_base {
-                    Expression::Binary(binary) if binary.has_slot() => {
-                        let add = Expression::Unary(Box::new(Unary::Minus(Expression::None)));
-                        binary.add_expr(add)
+                    Expression::Binary(binary) if binary.is_partial() => {
+                        binary.add_expr(Unary::new_minus_expr(Expression::None))
                     }
-                    Expression::None => AddExprResult::Done(Expression::Unary(Box::new(
-                        Unary::Minus(Expression::None),
-                    ))),
-                            _ => {
-                                let add = Expression::Binary(Box::new(Binary::Minus(
-                                    Expression::None,
-                                    Expression::None,
-                                )));
-                                expr_base.add_expr(add)
-                            }
-                    },
+                    Expression::None => Ok(Unary::new_minus_expr(Expression::None)),
+                    _ => expr_base.add_expr(Binary::new_empty_expr(BinaryType::Minus)),
+                },
                 TokenType::Plus
                 | TokenType::Slash
                 | TokenType::Star
@@ -68,17 +62,10 @@ impl Parser {
                 }
 
                 // Unary
-                TokenType::Bang => {
-                    let add = Expression::Unary(Box::new(Unary::Bang(Expression::None)));
-
-                    expr_base.add_expr(add)
-                }
-
+                TokenType::Bang => expr_base.add_expr(Unary::new_bang_expr(Expression::None)),
                 // Values
                 TokenType::Number => {
-                    let add = Expression::Number(token.get_literal().to_string());
-
-                    expr_base.add_expr(add)
+                    expr_base.add_expr(Expression::Number(token.get_literal().to_string()))
                 }
                 TokenType::String => {
                     let add = Expression::String(token.get_literal().to_string());
@@ -106,7 +93,7 @@ impl Parser {
             };
 
             match result {
-                AddExprResult::Done(expression) => {
+                Ok(expression) => {
                     if groups.is_empty() {
                         expr = expression
                     } else {
@@ -114,8 +101,7 @@ impl Parser {
                         groups.push(expression);
                     }
                 }
-                AddExprResult::Error(err) => panic!("{err}"),
-                AddExprResult::Full => panic!("Statement was full"),
+                Err(err) => panic!("{err}"),
             }
         }
 
@@ -124,45 +110,15 @@ impl Parser {
 
     fn new_binary_from_token(token: &TokenType) -> Expression {
         match token {
-            TokenType::Plus => {
-                Expression::Binary(Box::new(Binary::Plus(Expression::None, Expression::None)))
-            }
-            TokenType::Slash => {
-                Expression::Binary(Box::new(Binary::Slash(Expression::None, Expression::None)))
-            }
-
-            TokenType::Star => {
-                Expression::Binary(Box::new(Binary::Star(Expression::None, Expression::None)))
-            }
-
-            TokenType::BangEqual => Expression::Binary(Box::new(Binary::BangEqual(
-                Expression::None,
-                Expression::None,
-            ))),
-
-            TokenType::EqualEqual => Expression::Binary(Box::new(Binary::EqualEqual(
-                Expression::None,
-                Expression::None,
-            ))),
-
-            TokenType::Greater => Expression::Binary(Box::new(Binary::Greater(
-                Expression::None,
-                Expression::None,
-            ))),
-
-            TokenType::GreaterEqual => Expression::Binary(Box::new(Binary::GreaterEqual(
-                Expression::None,
-                Expression::None,
-            ))),
-
-            TokenType::Less => {
-                Expression::Binary(Box::new(Binary::Less(Expression::None, Expression::None)))
-            }
-
-            TokenType::LessEqual => Expression::Binary(Box::new(Binary::LessEqual(
-                Expression::None,
-                Expression::None,
-            ))),
+            TokenType::Plus => Binary::new_empty_expr(BinaryType::Plus),
+            TokenType::Slash => Binary::new_empty_expr(BinaryType::Slash),
+            TokenType::Star => Binary::new_empty_expr(BinaryType::Star),
+            TokenType::BangEqual => Binary::new_empty_expr(BinaryType::BangEqual),
+            TokenType::EqualEqual => Binary::new_empty_expr(BinaryType::EqualEqual),
+            TokenType::Greater => Binary::new_empty_expr(BinaryType::Greater),
+            TokenType::GreaterEqual => Binary::new_empty_expr(BinaryType::GreaterEqual),
+            TokenType::Less => Binary::new_empty_expr(BinaryType::Less),
+            TokenType::LessEqual => Binary::new_empty_expr(BinaryType::LessEqual),
             _ => panic!("Wrong use"),
         }
     }

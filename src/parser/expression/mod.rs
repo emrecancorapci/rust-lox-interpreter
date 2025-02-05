@@ -4,11 +4,11 @@ use unary::Unary;
 pub mod binary;
 pub mod unary;
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Expression {
     Grouping(Box<Expression>),
-    Binary(Box<Binary>),
-    Unary(Box<Unary>),
+    Binary(Binary),
+    Unary(Unary),
     Number(String),
     String(String),
     True,
@@ -18,59 +18,39 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn is_none(&self) -> bool {
+    pub(crate) fn is_none(&self) -> bool {
         match self {
             Expression::None => true,
             _ => false,
         }
     }
-
-    pub fn has_slot(&self) -> bool {
-        match self {
-            Expression::Grouping(e) => e.has_slot(),
-            Expression::Binary(b) => b.has_slot(),
-            Expression::Unary(u) => u.has_slot(),
-            Expression::None => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_binary(&self) -> bool {
+    pub(crate) fn is_binary(&self) -> bool {
         match self {
             Expression::Binary(_) => true,
             _ => false,
         }
     }
+
+    pub(crate) fn get_binary(&self) -> Result<&Binary, String> {
+        match self {
+            Expression::Binary(b) => Ok(b),
+            _ => todo!(),
+        }
+    }
 }
 
-impl AddExpr for Expression {
-    fn add_expr(&self, expr: Expression) -> AddExprResult {
+pub trait IsPartial {
+    fn is_partial(&self) -> bool;
+}
+
+impl IsPartial for Expression {
+    fn is_partial(&self) -> bool {
         match self {
-            Expression::Binary(binary) => binary.add_expr(expr),
-            Expression::Unary(unary) => unary.add_expr(expr),
-            Expression::Grouping(self_expr) => match expr {
-                Expression::Binary(binary) => binary.add_expr(self.clone()),
-                _ => match self_expr.add_expr(expr) {
-                    AddExprResult::Done(self_expr) => {
-                        AddExprResult::Done(Expression::Grouping(Box::new(self_expr)))
-                    }
-                    result => result,
-                },
-            },
-            Expression::Number(ref num) => match expr {
-                Expression::Binary(binary) => binary.add_expr(Expression::Number(num.to_string())),
-                Expression::Unary(unary) => unary.add_expr(Expression::Number(num.to_string())),
-                _ => AddExprResult::Full,
-            },
-            Expression::String(ref str) => match expr {
-                Expression::Binary(binary) => binary.add_expr(Expression::Number(str.to_string())),
-                Expression::Unary(unary) => unary.add_expr(Expression::Number(str.to_string())),
-                _ => AddExprResult::Full,
-            },
-            Expression::True => AddExprResult::Full,
-            Expression::False => AddExprResult::Full,
-            Expression::Nil => AddExprResult::Full,
-            Expression::None => AddExprResult::Done(expr),
+            Expression::Grouping(e) => e.is_partial(),
+            Expression::Binary(b) => b.is_partial(),
+            Expression::Unary(u) => u.is_partial(),
+            Expression::None => true,
+            _ => false,
         }
     }
 }
@@ -91,12 +71,36 @@ impl std::fmt::Display for Expression {
     }
 }
 
-pub enum AddExprResult {
-    Done(Expression),
-    Error(String),
-    Full,
+pub trait AddExpr {
+    fn add_expr(&self, expr: Expression) -> Result<Expression, String>;
 }
 
-pub trait AddExpr {
-    fn add_expr(&self, expr: Expression) -> AddExprResult;
+impl AddExpr for Expression {
+    fn add_expr(&self, expr: Expression) -> Result<Expression, String> {
+        match self {
+            Expression::Binary(binary) => binary.add_expr(expr),
+            Expression::Unary(unary) => unary.add_expr(expr),
+            Expression::Grouping(self_expr) => match expr {
+                Expression::Binary(binary) => binary.add_expr(self.clone()),
+                _ => match self_expr.add_expr(expr) {
+                    Ok(self_expr) => Ok(Expression::Grouping(Box::new(self_expr))),
+                    result => result,
+                },
+            },
+            Expression::Number(ref num) => match expr {
+                Expression::Binary(binary) => binary.add_expr(Expression::Number(num.to_string())),
+                Expression::Unary(unary) => unary.add_expr(Expression::Number(num.to_string())),
+                _ => Err(todo!()),
+            },
+            Expression::String(ref str) => match expr {
+                Expression::Binary(binary) => binary.add_expr(Expression::Number(str.to_string())),
+                Expression::Unary(unary) => unary.add_expr(Expression::Number(str.to_string())),
+                _ => Err(todo!()),
+            },
+            Expression::True => Err(todo!()),
+            Expression::False => Err(todo!()),
+            Expression::Nil => Err(todo!()),
+            Expression::None => Ok(expr),
+        }
+    }
 }
