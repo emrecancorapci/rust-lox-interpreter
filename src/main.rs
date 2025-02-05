@@ -1,15 +1,14 @@
-use std::io::{Error, ErrorKind};
-use std::{env, fs, process};
+use interpreter_starter_rust::{parser::Parser, tokenizer::Tokenizer};
 
-use interpreter_starter_rust::parser::Parser;
-use interpreter_starter_rust::tokenizer::Tokenizer;
+const CODE_SUCCESS: i32 = 0;
+const CODE_ERROR: i32 = 65;
 
-fn main() -> Result<(), Error> {
-    let args: Vec<String> = env::args().collect();
+fn main() -> Result<(), std::io::Error> {
+    let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 3 {
-        return Err(Error::new(
-            ErrorKind::InvalidInput,
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
             format!(
                 "This command needs at least two arguments. Usage: {} tokenize <filename>",
                 args[0]
@@ -19,28 +18,29 @@ fn main() -> Result<(), Error> {
 
     let command = &args[1];
     let filename = &args[2];
-    let file_contents = fs::read_to_string(filename)?;
+    let file_contents = std::fs::read_to_string(filename)?;
 
-    match command.as_str() {
+    let result = match command.as_str() {
         "tokenize" => {
             let output = Tokenizer::tokenize(file_contents)?;
-            let result = Tokenizer::serialize(output.get_tokens(), output.get_errors());
-
-            process::exit(result);
+            Tokenizer::serialize(output.get_tokens(), output.get_errors())
         }
         "parse" => {
             let output = Tokenizer::tokenize(file_contents)?;
             let expressions = Parser::parse_tokens(output.get_tokens());
 
             println!("{expressions}");
+            Ok(())
         }
-        _ => {
-            return Err(Error::new(
-                ErrorKind::NotFound,
-                format!("Unknown command: {}", command),
-            ));
-        }
+        _ => Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Unknown command: {}", command),
+        )),
     };
 
-    Ok(())
+    if result.is_ok() {
+        std::process::exit(CODE_SUCCESS)
+    } else {
+        std::process::exit(CODE_ERROR)
+    }
 }

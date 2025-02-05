@@ -100,7 +100,7 @@ impl Tokenizer {
                                 TokenType::String,
                                 format!("\"{}\"", buffer).as_str(),
                                 &buffer,
-                                index + 1
+                                index + 1,
                             ));
 
                             buffer.clear();
@@ -122,7 +122,7 @@ impl Tokenizer {
                             TokenType::Number,
                             buffer.as_str(),
                             format!("{buffer}.0").as_str(),
-                            index + 1
+                            index + 1,
                         ));
 
                         buffer.clear();
@@ -140,7 +140,7 @@ impl Tokenizer {
                             TokenType::Number,
                             &buffer[..buffer.len() - 1],
                             &format!("{buffer}0"),
-                            index + 1
+                            index + 1,
                         ));
                         tokens.push(Token::new_punctuator(TokenType::Dot, index + 1));
 
@@ -161,7 +161,7 @@ impl Tokenizer {
                             TokenType::Number,
                             buffer.as_str(),
                             literal.as_str(),
-                            index + 1
+                            index + 1,
                         ));
 
                         buffer.clear();
@@ -195,7 +195,7 @@ impl Tokenizer {
                     TokenType::Number,
                     buffer.as_str(),
                     format!("{buffer}.0").as_str(),
-                    index + 1
+                    index + 1,
                 ));
             }
             TokenizerMode::Number(true) if buffer.ends_with('.') => {
@@ -203,7 +203,7 @@ impl Tokenizer {
                     TokenType::Number,
                     &buffer[..buffer.len() - 1],
                     &format!("{buffer}0"),
-                    index + 1
+                    index + 1,
                 ));
                 tokens.push(Token::new_punctuator(TokenType::Dot, index + 1));
             }
@@ -221,7 +221,7 @@ impl Tokenizer {
                     TokenType::Number,
                     buffer.as_str(),
                     literal.as_str(),
-                    index + 1
+                    index + 1,
                 ));
             }
             TokenizerMode::Identifier => match TokenType::from_string(&buffer) {

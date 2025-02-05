@@ -1,3 +1,5 @@
+use std::io::{Error, ErrorKind};
+
 pub use token::Token;
 pub use token_type::TokenType;
 
@@ -24,7 +26,7 @@ impl Tokenizer {
         Ok(TokenizerOutput { tokens, errors })
     }
 
-    pub fn serialize(tokens: &Vec<Token>, errors: &Vec<TokenizerError>) -> i32 {
+    pub fn serialize(tokens: &Vec<Token>, errors: &Vec<TokenizerError>) -> Result<(), Error> {
         errors.iter().for_each(|err| err.print());
         tokens.iter().for_each(|t| {
             if !matches!(
@@ -36,9 +38,9 @@ impl Tokenizer {
         });
 
         if errors.is_empty() {
-            0
+            Ok(())
         } else {
-            65
+            Err(Error::new(ErrorKind::InvalidData, ""))
         }
     }
 }
