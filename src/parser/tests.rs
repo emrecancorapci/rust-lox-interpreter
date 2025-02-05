@@ -49,12 +49,12 @@ fn unaries() {
     assert_eq!(parse(input), expected.to_string());
 
     let input = "4 + -1";
-    let expected = "(+ 4.0 (- 1.0 ))";
+    let expected = "(+ 4.0 (- 1.0))";
 
     assert_eq!(parse(input), expected.to_string());
 
     let input = "4 * -1";
-    let expected = "(* 4.0 (- 1.0 ))";
+    let expected = "(* 4.0 (- 1.0))";
 
     assert_eq!(parse(input), expected.to_string());
 }
@@ -80,10 +80,20 @@ fn grouping() {
     let expected = "(group (group true))";
 
     assert_eq!(parse(input), expected.to_string());
+
+    let input = "(-29 + 68) * (92 * 21) / (98 + 61)";
+    let expected = "(/ (* (group (+ (- 29.0) 68.0)) (group (* 92.0 21.0))) (group (+ 98.0 61.0)))";
+
+    assert_eq!(parse(input), expected.to_string());
 }
 
 #[test]
 fn order_of_opreations() {
+    let input = "34 - 87 * 64 - 59";
+    let expected = "(- (- 34.0 (* 87.0 64.0)) 59.0)";
+
+    assert_eq!(parse(input), expected.to_string());
+
     let input = "1 + 3 * 2";
     let expected = "(+ 1.0 (* 3.0 2.0))";
 
@@ -108,7 +118,12 @@ fn order_of_opreations() {
 #[test]
 fn complex() {
     let input = "((true) + 1.5 - 34 * 21 / (2.53 - -1))";
-    let expected = "(group (- (+ (group true) 1.5) (/ (* 34.0 21.0) (group (- 2.53 (- 1.0 ))))))";
+    let expected = "(group (- (+ (group true) 1.5) (/ (* 34.0 21.0) (group (- 2.53 (- 1.0))))))";
+
+    assert_eq!(parse(input), expected.to_string());
+
+    let input = "(65 * -43 / (92 * 88))";
+    let expected = "(group (/ (* 65.0 (- 43.0)) (group (* 92.0 88.0))))";
 
     assert_eq!(parse(input), expected.to_string());
 }

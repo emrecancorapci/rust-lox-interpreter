@@ -37,7 +37,13 @@ impl AddExpr for Unary {
                 }
                 result => result,
             },
-            _ => AddExprResult::Full,
+            Unary::Bang(e) if expr.is_binary() => {
+                expr.add_expr(Expression::Unary(Box::new(Unary::Bang(e.clone()))))
+            }
+            Unary::Minus(e) if expr.is_binary() => {
+                expr.add_expr(Expression::Unary(Box::new(Unary::Minus(e.clone()))))
+            }
+            _ => panic!("Unary is full"),
         }
     }
 }
