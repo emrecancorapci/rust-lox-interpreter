@@ -38,16 +38,17 @@ impl Parser {
                     }
                     None => AddExprResult::Error("No left paranthesis".to_string()),
                 },
-                TokenType::Minus => {
-                    if expr_base.is_none() {
-                        AddExprResult::Done(Expression::Unary(Box::new(Unary::Minus(
-                            Expression::None,
-                        ))))
-                    } else {
-                        match expr {
+                TokenType::Minus => match expr_base {
+                    Expression::Binary(binary) => {
+                        let add = Expression::Unary(Box::new(Unary::Minus(Expression::None)));
+                        binary.add_expr(add)
+                    }
+                    Expression::None => AddExprResult::Done(Expression::Unary(Box::new(
+                        Unary::Minus(Expression::None),
+                    ))),
+                    _ => match expr {
                             Expression::Binary(ref b) if !b.has_slot() => {
-                                let add =
-                                    Expression::Unary(Box::new(Unary::Minus(Expression::None)));
+                            let add = Expression::Unary(Box::new(Unary::Minus(Expression::None)));
 
                                 expr_base.add_expr(add)
                             }
@@ -58,9 +59,8 @@ impl Parser {
                                 )));
                                 expr_base.add_expr(add)
                             }
-                        }
-                    }
-                }
+                    },
+                },
                 TokenType::Plus => {
                     let add = Expression::Binary(Box::new(Binary::Plus(
                         Expression::None,

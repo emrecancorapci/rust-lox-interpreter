@@ -41,13 +41,6 @@ impl Expression {
             _ => false,
         }
     }
-
-    pub fn is_binary_and_not_full(&self) -> bool {
-        match self {
-            Expression::Binary(b) => !b.is_full(),
-            _ => false,
-        }
-    }
 }
 
 impl AddExpr for Expression {
