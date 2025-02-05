@@ -13,8 +13,8 @@ impl Token {
         &self.token_type
     }
 
-    pub fn get_literal(&self) -> &str {
-        &self.literal
+    pub fn get_literal(&self) -> String {
+        self.literal.to_string()
     }
 
     pub fn get_line(&self) -> &usize {

@@ -27,7 +27,7 @@ fn main() -> Result<(), std::io::Error> {
         }
         "parse" => {
             let output = Tokenizer::tokenize(file_contents)?;
-            let expressions = Parser::parse_tokens(output.get_tokens());
+            let expressions = Parser::parse_tokens(output.get_tokens())?;
 
             println!("{expressions}");
             Ok(())

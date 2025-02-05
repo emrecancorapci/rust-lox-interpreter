@@ -56,7 +56,7 @@ impl AddExpr for Unary {
             UnaryType::Minus if expr.is_binary() => {
                 expr.add_expr(Unary::new_minus_expr(self.expression.as_ref().clone()))
             }
-            _ => panic!("Unary is full"),
+            _ => Err("Unary is full".to_string()),
         }
     }
 }

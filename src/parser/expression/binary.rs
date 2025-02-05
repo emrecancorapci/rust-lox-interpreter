@@ -22,16 +22,16 @@ pub struct Binary {
 }
 
 impl Binary {
-    pub(crate) fn new_empty_expr(binary_type: BinaryType) -> Expression {
-        Expression::Binary(Self::new(binary_type, Expression::None, Expression::None))
-    }
-
     pub(crate) fn new(binary_type: BinaryType, left: Expression, right: Expression) -> Self {
         Self {
             binary_type,
             left: Box::new(left),
             right: Box::new(right),
         }
+    }
+
+    pub(crate) fn new_empty_expr(binary_type: BinaryType) -> Expression {
+        Expression::Binary(Self::new(binary_type, Expression::None, Expression::None))
     }
 
     fn new_expr(binary_type: BinaryType, left: Expression, right: Expression) -> Expression {
@@ -69,7 +69,7 @@ impl AddExpr for Binary {
         match self.binary_type {
             BinaryType::Plus | BinaryType::Minus
                 if expr.is_binary()
-                    && !self.is_partial()
+                    && self.is_full()
                     && matches!(
                         expr.get_binary()?.binary_type,
                         BinaryType::Slash | BinaryType::Star
@@ -86,7 +86,7 @@ impl AddExpr for Binary {
                     ),
                 ))
             }
-            _ if matches!(expr, Expression::Binary(_)) && expr.get_binary()?.is_partial() => {
+            _ if expr.is_binary() && expr.is_partial() => {
                 expr.add_expr(Expression::Binary(self.clone()))
             }
             _ => {
