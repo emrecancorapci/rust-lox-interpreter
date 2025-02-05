@@ -38,7 +38,7 @@ impl Tokenizer {
                             if matches!(iter.peek(), Some((_, '/'))) {
                                 return;
                             } else {
-                                tokens.push(Token::new_punctuator(TokenType::Slash));
+                                tokens.push(Token::new_punctuator(TokenType::Slash, index + 1));
                                 TokenizerMode::None
                             }
                         }
@@ -47,20 +47,32 @@ impl Tokenizer {
 
                             match token.get_type() {
                                 &TokenType::Bang => {
-                                    tokens.push(Token::new_punctuator(TokenType::BangEqual));
+                                    tokens.push(Token::new_punctuator(
+                                        TokenType::BangEqual,
+                                        index + 1,
+                                    ));
                                 }
                                 &TokenType::Equal => {
-                                    tokens.push(Token::new_punctuator(TokenType::EqualEqual));
+                                    tokens.push(Token::new_punctuator(
+                                        TokenType::EqualEqual,
+                                        index + 1,
+                                    ));
                                 }
                                 &TokenType::Greater => {
-                                    tokens.push(Token::new_punctuator(TokenType::GreaterEqual));
+                                    tokens.push(Token::new_punctuator(
+                                        TokenType::GreaterEqual,
+                                        index + 1,
+                                    ));
                                 }
                                 &TokenType::Less => {
-                                    tokens.push(Token::new_punctuator(TokenType::LessEqual));
+                                    tokens.push(Token::new_punctuator(
+                                        TokenType::LessEqual,
+                                        index + 1,
+                                    ));
                                 }
                                 _ => {
                                     tokens.push(token);
-                                    tokens.push(Token::new_punctuator(TokenType::Equal));
+                                    tokens.push(Token::new_punctuator(TokenType::Equal, index + 1));
                                 }
                             }
 
@@ -68,12 +80,12 @@ impl Tokenizer {
                         }
                         _ => match TokenType::from_one(&ch) {
                             TokenType::None => {
-                                tokens.push(Token::new_unknown());
+                                tokens.push(Token::new_unknown(index + 1));
                                 errors.push(TokenizerError::unexpected_char(ch, index + 1));
                                 TokenizerMode::None
                             }
                             token => {
-                                tokens.push(Token::new_punctuator(token));
+                                tokens.push(Token::new_punctuator(token, index + 1));
                                 TokenizerMode::None
                             }
                         },
@@ -88,6 +100,7 @@ impl Tokenizer {
                                 TokenType::String,
                                 format!("\"{}\"", buffer).as_str(),
                                 &buffer,
+                                index + 1
                             ));
 
                             buffer.clear();
@@ -109,6 +122,7 @@ impl Tokenizer {
                             TokenType::Number,
                             buffer.as_str(),
                             format!("{buffer}.0").as_str(),
+                            index + 1
                         ));
 
                         buffer.clear();
@@ -126,8 +140,9 @@ impl Tokenizer {
                             TokenType::Number,
                             &buffer[..buffer.len() - 1],
                             &format!("{buffer}0"),
+                            index + 1
                         ));
-                        tokens.push(Token::new_punctuator(TokenType::Dot));
+                        tokens.push(Token::new_punctuator(TokenType::Dot, index + 1));
 
                         buffer.clear();
                         mode = TokenizerMode::None;
@@ -146,6 +161,7 @@ impl Tokenizer {
                             TokenType::Number,
                             buffer.as_str(),
                             literal.as_str(),
+                            index + 1
                         ));
 
                         buffer.clear();
@@ -159,19 +175,19 @@ impl Tokenizer {
                     _ => {
                         match TokenType::from_string(&buffer) {
                             TokenType::String => {
-                                tokens.push(Token::new_identifier(&buffer));
+                                tokens.push(Token::new_identifier(&buffer, index + 1));
                             }
                             token_type => {
-                                tokens.push(Token::new_reserved(token_type));
+                                tokens.push(Token::new_reserved(token_type, index + 1));
                             }
                         }
-
                         buffer.clear();
                         mode = TokenizerMode::None;
                     }
                 },
             }
         }
+
         match mode {
             TokenizerMode::String => errors.push(TokenizerError::unterminated_string(index + 1)),
             TokenizerMode::Number(false) => {
@@ -179,6 +195,7 @@ impl Tokenizer {
                     TokenType::Number,
                     buffer.as_str(),
                     format!("{buffer}.0").as_str(),
+                    index + 1
                 ));
             }
             TokenizerMode::Number(true) if buffer.ends_with('.') => {
@@ -186,8 +203,9 @@ impl Tokenizer {
                     TokenType::Number,
                     &buffer[..buffer.len() - 1],
                     &format!("{buffer}0"),
+                    index + 1
                 ));
-                tokens.push(Token::new_punctuator(TokenType::Dot));
+                tokens.push(Token::new_punctuator(TokenType::Dot, index + 1));
             }
             TokenizerMode::Number(true) => {
                 let mut literal = buffer.to_string();
@@ -203,14 +221,15 @@ impl Tokenizer {
                     TokenType::Number,
                     buffer.as_str(),
                     literal.as_str(),
+                    index + 1
                 ));
             }
             TokenizerMode::Identifier => match TokenType::from_string(&buffer) {
                 TokenType::String => {
-                    tokens.push(Token::new_identifier(&buffer));
+                    tokens.push(Token::new_identifier(&buffer, index + 1));
                 }
                 token_type => {
-                    tokens.push(Token::new_reserved(token_type));
+                    tokens.push(Token::new_reserved(token_type, index + 1));
                 }
             },
             TokenizerMode::None => {}

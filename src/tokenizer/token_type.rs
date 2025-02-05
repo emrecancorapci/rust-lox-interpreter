@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParenthesis,
