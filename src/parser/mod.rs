@@ -1,5 +1,6 @@
-use std::io::{Error, ErrorKind};
+use std::{fmt::format, io::{Error, ErrorKind}};
 
+use error::ParseExprError;
 use expression::{
     binary::{Binary, BinaryType},
     unary::Unary,
@@ -9,13 +10,13 @@ use expression::{
 use crate::tokenizer::{token::Token, token_type::TokenType};
 
 pub mod expression;
+pub mod error;
 mod tests;
 
 pub struct Parser;
 
 impl Parser {
-    pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Expression, Error> {
-        use TokenType::*;
+    pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Expression, ParseExprError> {
         if tokens.is_empty() {
             return Err(Error::new(
                 ErrorKind::InvalidInput,
@@ -25,44 +26,56 @@ impl Parser {
 
         let mut expr = Expression::None;
         let mut groups = Vec::new();
+        let mut groups_line = Vec::new();
 
         for token in tokens.iter().filter(Parser::token_filter()) {
             let expr_base = groups.last().unwrap_or(&expr);
 
             let result = match token.get_type() {
-                LeftParenthesis => {
+                TokenType::LeftParenthesis => {
                     groups.push(Expression::None);
+                    groups_line.push(token.get_line());
                     continue;
                 }
-                RightParenthesis => match groups.pop() {
+                TokenType::RightParenthesis => match groups.pop() {
                     Some(group_expr) => {
                         if groups.is_empty() {
+                            groups_line.pop();
                             expr.add_expr(Expression::Grouping(Box::new(group_expr)))
                         } else {
+                            groups_line.pop();
                             groups
                                 .last()
                                 .unwrap()
                                 .add_expr(Expression::Grouping(Box::new(group_expr)))
                         }
                     }
-                    Option::None => Err("No left paranthesis".to_string()),
+                    Option::None => Err(format!("[line {}] No left paranthesis", token.get_line())),
                 },
-                Minus => match expr_base {
-                    Expression::Binary(binary) if binary.is_partial() => {
-                        binary.add_expr(Unary::new_minus_expr(Expression::None))
-                    }
-                    Expression::None => Ok(Unary::new_minus_expr(Expression::None)),
-                    _ => expr_base.add_expr(Binary::new_empty_expr(BinaryType::Minus)),
-                },
-                Plus | Slash | Star | BangEqual | EqualEqual | Greater | GreaterEqual | Less
-                | LessEqual => expr_base.add_expr(Parser::new_binary(token.get_type())?),
-                Bang => expr_base.add_expr(Unary::new_bang_expr(Expression::None)),
-                Number => expr_base.add_expr(Expression::Number(token.get_literal())),
-                String => expr_base.add_expr(Expression::String(token.get_literal())),
-                True => expr_base.add_expr(Expression::True),
-                False => expr_base.add_expr(Expression::False),
-                Nil => expr_base.add_expr(Expression::Nil),
-                _ => {
+                TokenType::Minus if expr_base.is_binary() && expr_base.is_partial() => expr_base
+                    .get_binary()
+                    .and_then(|b| b.add_expr(Unary::new_minus_expr(Expression::None))),
+                TokenType::Minus if expr_base.is_none() => {
+                    Ok(Unary::new_minus_expr(Expression::None))
+                }
+                TokenType::Minus => expr_base.add_expr(Binary::new_empty_expr(BinaryType::Minus)),
+                TokenType::Bang => expr_base.add_expr(Unary::new_bang_expr(Expression::None)),
+                TokenType::Number => expr_base.add_expr(Expression::Number(token.get_literal())),
+                TokenType::String => expr_base.add_expr(Expression::String(token.get_literal())),
+                TokenType::True => expr_base.add_expr(Expression::True),
+                TokenType::False => expr_base.add_expr(Expression::False),
+                TokenType::Nil => expr_base.add_expr(Expression::Nil),
+                TokenType::Plus
+                | TokenType::Slash
+                | TokenType::Star
+                | TokenType::BangEqual
+                | TokenType::EqualEqual
+                | TokenType::Greater
+                | TokenType::GreaterEqual
+                | TokenType::Less
+                | TokenType::LessEqual => expr_base.add_expr(Parser::new_binary(token.get_type())?),
+                t => {
+                    eprintln!("Unknown token: {t}");
                     continue;
                 }
             };
@@ -73,6 +86,7 @@ impl Parser {
                         expr = expression
                     } else {
                         groups.pop();
+                        groups_line.pop();
                         groups.push(expression);
                     }
                 }
@@ -80,7 +94,11 @@ impl Parser {
             }
         }
 
-        Ok(expr)
+        if !groups.is_empty() {
+            Err(Error::new(ErrorKind::InvalidInput, format!("")))
+        } else {
+            Ok(expr)
+        }
     }
 
     fn new_binary(token: &TokenType) -> Result<Expression, Error> {

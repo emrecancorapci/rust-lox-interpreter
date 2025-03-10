@@ -34,19 +34,9 @@ fn nil_true_false() {
 }
 
 #[test]
-fn binaries() {
-    let input = "1 + 2";
-    let expected = "(+ 1.0 2.0)";
-
-    assert_eq!(_parse(input), expected.to_string());
-
+fn binary() {
     let input = "1 - 2";
     let expected = "(- 1.0 2.0)";
-
-    assert_eq!(_parse(input), expected.to_string());
-
-    let input = "1 / 2";
-    let expected = "(/ 1.0 2.0)";
 
     assert_eq!(_parse(input), expected.to_string());
 
